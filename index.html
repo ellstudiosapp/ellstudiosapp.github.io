@@ -1,391 +1,303 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EllStudiosApp</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EllStudiosApp Store</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
   <style>
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
-      font-family:Arial, sans-serif;
+    html, body {
+      height: 100%;
+      margin: 0;
     }
 
     body{
-      background:#0f172a;
-      color:white;
-      overflow-x:hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background:#f6f7fb;
+      font-family: Arial, sans-serif;
     }
 
-    .bg{
-      position:fixed;
-      width:100%;
-      height:100%;
-      background:
-      radial-gradient(circle at top left,#2563eb55,transparent 35%),
-      radial-gradient(circle at bottom right,#9333ea55,transparent 35%);
-      z-index:-1;
+    .page-content {
+      flex: 1;
     }
 
-    header{
-      padding:20px 8%;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      backdrop-filter:blur(10px);
+    /* TOP BAR */
+    .topbar{
+      background:white;
+      padding:10px 15px;
+      position:sticky;
+      top:0;
+      z-index:1000;
+      border-bottom:1px solid #eee;
     }
 
-    .logo{
-      font-size:28px;
+    .brand{
       font-weight:bold;
-      color:#60a5fa;
+      color:#1a73e8;
     }
 
-    nav a{
-      text-decoration:none;
-      color:white;
-      margin-left:24px;
-      transition:0.3s;
-      font-size:15px;
-    }
-
-    nav a:hover{
-      color:#60a5fa;
-    }
-
-    .hero{
-      min-height:90vh;
+    .search-box{
+      background:#f1f3f4;
+      border-radius:25px;
+      padding:8px 15px;
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      padding:0 8%;
-      flex-wrap:wrap;
-      gap:40px;
+      gap:10px;
+      width:100%;
     }
 
-    .hero-text{
-      flex:1;
-      min-width:300px;
-    }
-
-    .hero-text h1{
-      font-size:60px;
-      line-height:1.1;
-      margin-bottom:20px;
-    }
-
-    .hero-text span{
-      color:#60a5fa;
-    }
-
-    .hero-text p{
-      color:#cbd5e1;
-      font-size:18px;
-      line-height:1.8;
-      margin-bottom:30px;
-      max-width:600px;
-    }
-
-    .btn-group{
-      display:flex;
-      gap:16px;
-      flex-wrap:wrap;
-    }
-
-    .btn{
-      padding:14px 28px;
-      border-radius:14px;
+    .search-box input{
       border:none;
-      cursor:pointer;
-      font-size:16px;
-      transition:0.3s;
-      text-decoration:none;
-      display:inline-block;
-    }
-
-    .btn-primary{
-      background:#2563eb;
-      color:white;
-    }
-
-    .btn-primary:hover{
-      background:#1d4ed8;
-      transform:translateY(-2px);
-    }
-
-    .btn-outline{
+      outline:none;
       background:transparent;
-      border:1px solid #60a5fa;
-      color:#60a5fa;
+      width:100%;
     }
 
-    .btn-outline:hover{
-      background:#60a5fa;
-      color:white;
-    }
-
-    .phone{
-      flex:1;
-      min-width:280px;
+    /* CATEGORY */
+    .category-scroll{
       display:flex;
-      justify-content:center;
+      overflow-x:auto;
+      gap:10px;
+      padding:10px 5px;
     }
 
-    .phone-card{
-      width:300px;
-      height:600px;
-      background:linear-gradient(180deg,#1e293b,#0f172a);
-      border-radius:40px;
+    .cat{
+      white-space:nowrap;
+      padding:6px 14px;
+      border-radius:20px;
+      background:#fff;
+      border:1px solid #ddd;
+      font-size:14px;
+      cursor:pointer;
+    }
+
+    .cat.active{
+      background:#1a73e8;
+      color:white;
+      border:none;
+    }
+
+    /* BANNER */
+    .banner{
+      background:linear-gradient(135deg,#1a73e8,#34a853);
+      color:white;
       padding:20px;
-      position:relative;
-      box-shadow:0 20px 60px rgba(0,0,0,0.5);
-      animation:float 4s ease-in-out infinite;
-      border:1px solid rgba(255,255,255,0.1);
+      border-radius:15px;
     }
 
-    @keyframes float{
-      0%,100%{
-        transform:translateY(0px);
-      }
-      50%{
-        transform:translateY(-15px);
-      }
+    /* 🔥 GRID FLUID TRENDING */
+    #trendingContainer{
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap:12px;
+      padding:10px 5px;
     }
 
-    .screen{
+    /* CARD */
+    .mini-card{
+      background:white;
+      border-radius:15px;
+      padding:12px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.05);
+      text-align:center;
+      cursor:pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .mini-card:hover{
+      transform: scale(1.06) translateY(-3px);
+      box-shadow:0 12px 30px rgba(0,0,0,0.18);
+      z-index:10;
+    }
+
+    .app-icon{
+      width:70px;
+      height:70px;
+      margin:0 auto;
+      border-radius:12px;
+      overflow:hidden;
+      background:#ddd;
+    }
+
+    .app-icon img{
       width:100%;
       height:100%;
-      border-radius:30px;
-      background:linear-gradient(135deg,#2563eb,#7c3aed);
-      padding:30px;
+      object-fit:cover;
+    }
+
+    .small-text{
+      font-size:12px;
+      color:#777;
+    }
+
+    /* RECOMMENDED */
+    .app-card{
+      background:white;
+      border-radius:15px;
+      padding:12px;
       display:flex;
-      flex-direction:column;
-      justify-content:center;
+      gap:12px;
       align-items:center;
-      text-align:center;
+      box-shadow:0 2px 10px rgba(0,0,0,0.05);
     }
 
-    .screen h2{
-      font-size:32px;
-      margin-bottom:20px;
+    .app-card:hover{
+      transform:scale(1.03);
+      transition:0.2s;
     }
 
-    .screen p{
-      line-height:1.7;
-      color:#e2e8f0;
+    .app-icon-small{
+      width:55px;
+      height:55px;
+      border-radius:12px;
+      overflow:hidden;
     }
 
-    .features{
-      padding:100px 8%;
-    }
-
-    .section-title{
-      text-align:center;
-      margin-bottom:60px;
-    }
-
-    .section-title h2{
-      font-size:42px;
-      margin-bottom:16px;
-    }
-
-    .section-title p{
-      color:#94a3b8;
-    }
-
-    .feature-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-      gap:24px;
-    }
-
-    .card{
-      background:rgba(255,255,255,0.05);
-      padding:30px;
-      border-radius:24px;
-      transition:0.3s;
-      backdrop-filter:blur(10px);
-      border:1px solid rgba(255,255,255,0.08);
-    }
-
-    .card:hover{
-      transform:translateY(-8px);
-      background:rgba(255,255,255,0.08);
-    }
-
-    .card .icon{
-      font-size:42px;
-      margin-bottom:18px;
-    }
-
-    .card h3{
-      margin-bottom:12px;
-      font-size:22px;
-    }
-
-    .card p{
-      color:#cbd5e1;
-      line-height:1.7;
+    .app-icon-small img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
     }
 
     footer{
-      padding:40px 8%;
-      text-align:center;
-      color:#94a3b8;
-      border-top:1px solid rgba(255,255,255,0.08);
-      margin-top:80px;
-    }
-
-    @media(max-width:900px){
-
-      .hero{
-        flex-direction:column;
-        padding-top:60px;
-      }
-
-      .hero-text h1{
-        font-size:42px;
-      }
-
-      nav{
-        display:none;
-      }
-
-      .phone-card{
-        width:260px;
-        height:520px;
-      }
-
+      margin-top:40px;
+      background:#0f172a;
+      color:white;
+      padding:30px 15px;
     }
   </style>
 </head>
 
 <body>
 
-<div class="bg"></div>
+<main class="page-content">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="d-flex align-items-center gap-2">
+      <div class="brand">EllStudiosApp</div>
 
-<header>
-  <div class="logo">EllStudiosApp</div>
-
-  <nav>
-    <a href="#">Home</a>
-    <a href="#features">Features</a>
-    <a href="#">Apps</a>
-    <a href="#">Contact</a>
-  </nav>
-</header>
-
-<section class="hero">
-
-  <div class="hero-text">
-    <h1>
-      Create Better <span>Learning Apps</span>
-    </h1>
-
-    <p>
-      EllStudiosApp menghadirkan aplikasi edukasi, pembelajaran,
-      utilitas, kesehatan, dan latihan soal interaktif dengan
-      desain modern, ringan, dan mudah digunakan untuk semua pengguna.
-    </p>
-
-    <div class="btn-group">
-      <a href="https://play.google.com/store/apps/dev?id=7422067693753831105" class="btn btn-primary">
-        Google Play
-      </a>
-
-      <a href="#" class="btn btn-outline">
-        Learn More
-      </a>
-    </div>
-  </div>
-
-  <div class="phone">
-    <div class="phone-card">
-      <div class="screen">
-        <h2>EllStudiosApp</h2>
-        <p>
-          Interactive apps for education,
-          learning, quizzes, and everyday productivity.
-        </p>
+      <div class="search-box flex-grow-1">
+        <i class="bi bi-search"></i>
+        <input type="text" id="searchInput" placeholder="Search apps...">
       </div>
+
+      <i class="bi bi-person-circle fs-4"></i>
     </div>
   </div>
 
-</section>
-
-<section class="features" id="features">
-
-  <div class="section-title">
-    <h2>Why Choose Us</h2>
-    <p>
-      Modern educational experiences designed for everyone.
-    </p>
+  <!-- CATEGORY -->
+<!-- <div class="container mt-2">
+  <div class="category-scroll">
+    <div class="cat active">For You</div>
+    <div class="cat">Top Apps</div>
+    <div class="cat">Education</div>
+    <div class="cat">Utilities</div>
+    <div class="cat">Games</div>
   </div>
+</div> -->
 
-  <div class="feature-grid">
-
-    <div class="card">
-      <div class="icon">📚</div>
-      <h3>Educational Apps</h3>
-      <p>
-        Interactive educational applications for children,
-        students, and modern digital learning.
-      </p>
-    </div>
-
-    <div class="card">
-      <div class="icon">⚡</div>
-      <h3>Fast & Lightweight</h3>
-      <p>
-        Optimized performance with lightweight applications
-        and smooth user experience.
-      </p>
-    </div>
-
-    <div class="card">
-      <div class="icon">🎨</div>
-      <h3>Modern Design</h3>
-      <p>
-        Clean, modern, and user-friendly interfaces
-        with attractive visual appearance.
-      </p>
-    </div>
-
-    <div class="card">
-      <div class="icon">📱</div>
-      <h3>Android Focused</h3>
-      <p>
-        Designed specifically for Android users
-        with responsive and adaptive layouts.
-      </p>
-    </div>
-
+<!-- BANNER -->
+<!-- <div class="container mt-3">
+  <div class="banner">
+    <h4>EllStudiosApp Featured</h4>
+    <p class="mb-0">Aplikasi terbaik dari EllStudiosApp</p>
   </div>
+</div> -->
 
-</section>
+<!-- TRENDING GRID -->
+<div class="container mt-4">
+  <!-- <h5>Trending Apps</h5> -->
+  <div id="trendingContainer"></div>
+</div>
 
+<!-- RECOMMENDED -->
+<!-- <div class="container mt-4">
+  <h5>Recommended Apps</h5>
+
+  <div class="app-card mt-3">
+    <div class="app-icon-small">
+      <img src="https://via.placeholder.com/150/1a73e8/ffffff?text=LA">
+    </div>
+    <div>
+      <div class="fw-bold">Learning App</div>
+      <div class="small-text">EllStudiosApp • Education • 4.8 ★</div>
+    </div>
+  </div>
+</div> -->
+
+</main>
+
+<!-- FOOTER -->
 <footer>
-  © <span id="year"></span> EllStudiosApp — All Rights Reserved
+  <h5>EllStudiosApp</h5>
+  <p>Developer aplikasi edukasi & utilitas.</p>
 </footer>
 
+<script src="apps.js"></script>
 <script>
-  document.getElementById("year").innerText =
-  new Date().getFullYear();
+/* ======================
+   JSON DATA
+====================== */
+const data = { applications: Array.isArray(appsData.applications) ? appsData.applications : [] };
+const container = document.getElementById("trendingContainer");
 
-  const cards = document.querySelectorAll(".card");
+function getImageUrl(app) {
+  if (app.image_url) return app.image_url;
+  const initials = app.app_name
+    .split(" ")
+    .slice(0, 2)
+    .map(word => word[0] || "")
+    .join("")
+    .toUpperCase();
+  return `https://via.placeholder.com/150/1a73e8/ffffff?text=${encodeURIComponent(initials || "APP")}`;
+}
 
-  cards.forEach((card, index) => {
-    card.style.opacity = "0";
-    card.style.transform = "translateY(30px)";
+/* ======================
+   RENDER GRID
+====================== */
+function render(list) {
+  container.innerHTML = "";
 
-    setTimeout(() => {
-      card.style.transition = "0.6s ease";
-      card.style.opacity = "1";
-      card.style.transform = "translateY(0)";
-    }, 200 * index);
+  list.forEach(app => {
+    const div = document.createElement("div");
+    div.className = "mini-card";
+
+    div.innerHTML = `
+      <div class="app-icon">
+        <img src="${getImageUrl(app)}">
+      </div>
+      <div class="fw-bold mt-2">${app.app_name}</div>
+    `;
+
+    if (app.play_store_url) {
+      div.addEventListener("click", () => {
+        window.open(app.play_store_url, "_blank");
+      });
+    }
+
+    container.appendChild(div);
   });
+}
+
+render(data.applications);
+
+/* ======================
+   SEARCH FILTER
+====================== */
+document.getElementById("searchInput").addEventListener("input", function() {
+  const val = this.value.toLowerCase();
+
+  const filtered = data.applications.filter(a =>
+    a.app_name.toLowerCase().includes(val)
+  );
+
+  render(filtered);
+});
 </script>
 
 </body>
