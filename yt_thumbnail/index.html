@@ -4,41 +4,36 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>YouTube Thumbnail V3</title>
+<title>YouTube Thumbnail V4</title>
 
 <style>
-
-*{
-    box-sizing:border-box;
-}
 
 body{
     margin:0;
     padding:30px;
     background:#0f0f0f;
     color:white;
-    font-family:Arial,sans-serif;
+    font-family:Arial;
     text-align:center;
 }
 
 h2{
-    margin-bottom:25px;
+    margin-bottom:20px;
 }
 
 input{
     width:70%;
     max-width:700px;
     padding:14px;
-    border:none;
     border-radius:10px;
+    border:none;
     outline:none;
-    background:#1d1d1d;
+    background:#1c1c1c;
     color:white;
-    font-size:15px;
 }
 
 button{
-    padding:14px 20px;
+    padding:14px 18px;
     border:none;
     border-radius:10px;
     cursor:pointer;
@@ -55,7 +50,7 @@ button{
     color:#00ffcc;
 }
 
-.thumb-container{
+.container{
     margin-top:30px;
     display:flex;
     flex-wrap:wrap;
@@ -63,15 +58,14 @@ button{
     gap:20px;
 }
 
-.thumb{
+.card{
     width:340px;
     background:#1a1a1a;
     border-radius:14px;
-    overflow:hidden;
     padding:12px;
 }
 
-.thumb img{
+.card img{
     width:100%;
     border-radius:10px;
 }
@@ -79,51 +73,47 @@ button{
 .title{
     margin-top:10px;
     font-weight:bold;
-    line-height:1.5;
+    font-size:15px;
 }
 
 .date{
-    margin-top:5px;
-    color:#aaa;
     font-size:13px;
+    color:#aaa;
+    margin-top:5px;
 }
 
 .actions{
-    margin-top:15px;
+    margin-top:12px;
     display:flex;
-    justify-content:center;
     gap:10px;
-    flex-wrap:wrap;
+    justify-content:center;
 }
 
 .download{
-    display:inline-block;
-    padding:10px 14px;
     background:#00ffcc;
     color:#000;
-    text-decoration:none;
+    padding:10px 14px;
     border-radius:8px;
-    font-size:14px;
+    text-decoration:none;
     font-weight:bold;
 }
 
 .copybtn{
     background:#ffaa00;
     color:#000;
+    border:none;
+    padding:10px 14px;
+    border-radius:8px;
 }
 
 .history{
     margin-top:50px;
 }
 
-.history h3{
-    margin-bottom:15px;
-}
-
 .history a{
-    color:#00ffcc;
     display:block;
-    margin:8px;
+    color:#00ffcc;
+    margin:6px;
     text-decoration:none;
     word-break:break-all;
 }
@@ -133,15 +123,14 @@ button{
 
 <body>
 
-<h2>🔥 YouTube Thumbnail Scraper</h2>
+<h2>🔥 YouTube Thumbnail Scraper (FIXED)</h2>
 
 <div>
 
     <input
-        type="text"
         id="rssInput"
-        placeholder="Masukkan RSS YouTube"
         value="https://www.youtube.com/feeds/videos.xml?channel_id=UCw_9u2xhPtFGnmZOZ1gEInw"
+        placeholder="RSS URL YouTube"
     >
 
     <button class="search-btn" onclick="loadRSS()">
@@ -152,13 +141,11 @@ button{
 
 <div id="loading" class="loading"></div>
 
-<div id="result" class="thumb-container"></div>
+<div id="result" class="container"></div>
 
 <div class="history">
-
-    <h3>📜 History Pencarian</h3>
+    <h3>📜 History</h3>
     <div id="historyList"></div>
-
 </div>
 
 <script>
@@ -175,30 +162,28 @@ const historyList =
 loadHistory();
 
 
-// =============================
-// MAIN LOAD RSS
-// =============================
+// ============================
+// MAIN FUNCTION
+// ============================
 async function loadRSS() {
 
-    const rssUrl =
+    const rss =
         document.getElementById("rssInput")
         .value
         .trim();
 
-    if (!rssUrl) return alert("Masukkan RSS URL");
+    if (!rss) return alert("Masukkan RSS");
 
-    saveHistory(rssUrl);
+    saveHistory(rss);
 
     result.innerHTML = "";
-
-    loading.innerHTML =
-        "⏳ Mengambil RSS...";
+    loading.innerHTML = "⏳ Loading RSS...";
 
     try {
 
         const proxy =
             "https://corsproxy.io/?" +
-            encodeURIComponent(rssUrl);
+            encodeURIComponent(rss);
 
         const res =
             await fetch(proxy);
@@ -216,7 +201,7 @@ async function loadRSS() {
             );
 
         const entries =
-            xml.querySelectorAll("entry");
+            xml.getElementsByTagName("entry");
 
         if (!entries.length) {
 
@@ -229,49 +214,43 @@ async function loadRSS() {
         loading.innerHTML =
             `🎬 ${entries.length} video ditemukan`;
 
-        entries.forEach(entry => {
+        for (let entry of entries) {
 
-            const videoId =
-                entry.querySelector(
-                    "video\\:videoId"
-                )?.textContent;
+            // ============================
+            // FIX VIDEO ID (ANTI UNDEFINED)
+            // ============================
+            let videoId =
+                entry.getElementsByTagName("yt:videoId")[0]?.textContent ||
+                entry.getElementsByTagName("videoId")[0]?.textContent;
+
+            if (!videoId) continue;
 
             const title =
-                entry.querySelector("title")
-                ?.textContent || "No title";
+                entry.getElementsByTagName("title")[0]?.textContent ||
+                "No title";
 
             const published =
-                entry.querySelector("published")
-                ?.textContent || "";
+                entry.getElementsByTagName("published")[0]?.textContent ||
+                "";
 
-            // =============================
-            // THUMBNAIL FIX (ANTI RUSAK)
-            // =============================
-            const thumbMax =
+            // ============================
+            // THUMBNAIL (STABLE)
+            // ============================
+            const thumb =
                 `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-
-            const thumbHQ =
-                `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-
-            const thumbMQ =
-                `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 
             const card =
                 document.createElement("div");
 
-            card.className = "thumb";
+            card.className = "card";
 
             card.innerHTML = `
 
                 <img
-                    src="${thumbMax}"
-                    loading="lazy"
+                    src="${thumb}"
                     onerror="
-                        if(this.src.includes('maxresdefault')){
-                            this.src='${thumbHQ}';
-                        } else if(this.src.includes('hqdefault')){
-                            this.src='${thumbMQ}';
-                        }
+                        this.onerror=null;
+                        this.src='https://img.youtube.com/vi/${videoId}/hqdefault.jpg';
                     "
                 >
 
@@ -287,17 +266,17 @@ async function loadRSS() {
 
                     <a
                         class="download"
-                        href="${thumbHQ}"
-                        download="${sanitize(title)}.jpg"
+                        href="https://img.youtube.com/vi/${videoId}/hqdefault.jpg"
+                        download
                     >
-                        ⬇ Download
+                        Download
                     </a>
 
                     <button
                         class="copybtn"
-                        onclick="copyImage('${thumbHQ}', this)"
+                        onclick="copyImage('https://img.youtube.com/vi/${videoId}/hqdefault.jpg', this)"
                     >
-                        📋 Copy Image
+                        Copy
                     </button>
 
                 </div>
@@ -305,22 +284,21 @@ async function loadRSS() {
             `;
 
             result.appendChild(card);
-
-        });
+        }
 
     } catch (err) {
 
         console.error(err);
 
         loading.innerHTML =
-            "❌ Gagal mengambil data";
+            "❌ Gagal load RSS";
     }
 }
 
 
-// =============================
+// ============================
 // COPY IMAGE
-// =============================
+// ============================
 async function copyImage(url, btn) {
 
     try {
@@ -341,42 +319,36 @@ async function copyImage(url, btn) {
             btn.innerHTML;
 
         btn.innerHTML =
-            "✅ Copied!";
+            "✅ Copied";
 
         setTimeout(() => {
-
             btn.innerHTML = old;
+        }, 1200);
 
-        }, 1500);
+    } catch (e) {
 
-    } catch (err) {
-
-        alert("❌ Copy gagal");
-        console.error(err);
+        alert("Gagal copy");
     }
 }
 
 
-// =============================
+// ============================
 // HISTORY (LOCAL STORAGE)
-// =============================
+// ============================
 function saveHistory(url) {
 
-    let history =
-        JSON.parse(
-            localStorage.getItem("yt_history")
-        ) || [];
+    let data =
+        JSON.parse(localStorage.getItem("yt_history")) || [];
 
-    if (!history.includes(url)) {
-        history.unshift(url);
+    if (!data.includes(url)) {
+        data.unshift(url);
     }
 
-    history =
-        history.slice(0, 20);
+    data = data.slice(0, 15);
 
     localStorage.setItem(
         "yt_history",
-        JSON.stringify(history)
+        JSON.stringify(data)
     );
 
     loadHistory();
@@ -384,14 +356,12 @@ function saveHistory(url) {
 
 function loadHistory() {
 
-    const history =
-        JSON.parse(
-            localStorage.getItem("yt_history")
-        ) || [];
+    const data =
+        JSON.parse(localStorage.getItem("yt_history")) || [];
 
     historyList.innerHTML = "";
 
-    history.forEach(url => {
+    data.forEach(url => {
 
         const a =
             document.createElement("a");
@@ -401,28 +371,18 @@ function loadHistory() {
 
         a.onclick = () => {
 
-            document.getElementById("rssInput")
-            .value = url;
-
+            document.getElementById("rssInput").value = url;
             loadRSS();
         };
 
         historyList.appendChild(a);
-
     });
 }
 
 
-// =============================
+// ============================
 // HELPERS
-// =============================
-function sanitize(str) {
-
-    return str
-        .replace(/[^a-zA-Z0-9\- ]/g, "")
-        .substring(0, 50);
-}
-
+// ============================
 function escapeHtml(text) {
 
     return text
@@ -433,17 +393,14 @@ function escapeHtml(text) {
 
 function formatDate(dateStr) {
 
-    const d =
-        new Date(dateStr);
+    if (!dateStr) return "";
 
-    return d.toLocaleDateString(
-        "id-ID",
-        {
-            day:"numeric",
+    return new Date(dateStr)
+        .toLocaleDateString("id-ID", {
+            day:"2-digit",
             month:"long",
             year:"numeric"
-        }
-    );
+        });
 }
 
 </script>
