@@ -3,151 +3,154 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>YouTube Thumbnail Scraper</title>
 
 <style>
-    *{
-        box-sizing:border-box;
-    }
 
-    body{
-        margin:0;
-        padding:30px;
-        background:#0f0f0f;
-        font-family:Arial, sans-serif;
-        color:white;
-        text-align:center;
-    }
+*{
+    box-sizing:border-box;
+}
 
-    h2{
-        margin-bottom:20px;
-    }
+body{
+    margin:0;
+    padding:30px;
+    background:#0f0f0f;
+    color:white;
+    font-family:Arial,sans-serif;
+    text-align:center;
+}
 
-    .search-box{
-        display:flex;
-        justify-content:center;
-        gap:10px;
-        flex-wrap:wrap;
-        margin-bottom:25px;
-    }
+h1{
+    margin-bottom:25px;
+}
 
-    input{
-        width:600px;
-        max-width:100%;
-        padding:14px;
-        border:none;
-        border-radius:10px;
-        outline:none;
-        background:#1c1c1c;
-        color:white;
-        font-size:15px;
-    }
+.search-box{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
 
-    button{
-        border:none;
-        padding:14px 20px;
-        border-radius:10px;
-        cursor:pointer;
-        font-weight:bold;
-    }
+input{
+    width:650px;
+    max-width:100%;
+    padding:15px;
+    border:none;
+    outline:none;
+    border-radius:12px;
+    background:#1d1d1d;
+    color:white;
+    font-size:15px;
+}
 
-    .search-btn{
-        background:#00ffc3;
-        color:#000;
-    }
+button{
+    border:none;
+    border-radius:12px;
+    padding:15px 20px;
+    cursor:pointer;
+    font-weight:bold;
+}
 
-    .thumb-container{
-        display:flex;
-        flex-wrap:wrap;
-        justify-content:center;
-        gap:20px;
-        margin-top:30px;
-    }
+.search-btn{
+    background:#00ffc3;
+    color:black;
+}
 
-    .thumb{
-        width:340px;
-        background:#1b1b1b;
-        border-radius:14px;
-        padding:12px;
-        box-shadow:0 0 10px rgba(0,0,0,0.4);
-    }
+.loading{
+    margin-top:25px;
+    color:#00ffc3;
+}
 
-    .thumb img{
-        width:100%;
-        border-radius:10px;
-    }
+.thumb-container{
+    margin-top:30px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:20px;
+}
 
-    .title{
-        font-weight:bold;
-        margin-top:10px;
-        font-size:15px;
-    }
+.thumb{
+    width:340px;
+    background:#1b1b1b;
+    border-radius:16px;
+    overflow:hidden;
+    padding:12px;
+    box-shadow:0 0 10px rgba(0,0,0,0.4);
+}
 
-    .views{
-        color:#aaa;
-        margin-top:5px;
-        font-size:13px;
-    }
+.thumb img{
+    width:100%;
+    border-radius:12px;
+}
 
-    .actions{
-        margin-top:12px;
-        display:flex;
-        gap:10px;
-        justify-content:center;
-        flex-wrap:wrap;
-    }
+.title{
+    margin-top:12px;
+    font-weight:bold;
+    font-size:15px;
+    line-height:1.5;
+}
 
-    .download{
-        background:#00ffc3;
-        color:black;
-        text-decoration:none;
-        padding:10px 14px;
-        border-radius:8px;
-        font-size:14px;
-        font-weight:bold;
-    }
+.actions{
+    margin-top:15px;
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+}
 
-    .copybtn{
-        background:#ffb100;
-        color:black;
-    }
+.download{
+    text-decoration:none;
+    background:#00ffc3;
+    color:black;
+    padding:10px 14px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:bold;
+}
 
-    .history{
-        margin-top:50px;
-    }
+.copybtn{
+    background:#ffb100;
+    color:black;
+}
 
-    .history h3{
-        margin-bottom:15px;
-    }
+.history{
+    margin-top:60px;
+}
 
-    .history-item{
-        display:block;
-        color:#00ffc3;
-        margin:8px 0;
-        text-decoration:none;
-        word-break:break-all;
-    }
+.history-item{
+    display:block;
+    margin:10px 0;
+    color:#00ffc3;
+    text-decoration:none;
+    word-break:break-all;
+}
 
-    .loading{
-        margin-top:20px;
-        color:#00ffc3;
-    }
+.small{
+    margin-top:8px;
+    color:#999;
+    font-size:13px;
+}
+
 </style>
 </head>
 
 <body>
 
-<h2>🔥 YouTube Thumbnail Scraper</h2>
+<h1>🔥 YouTube Thumbnail Scraper</h1>
 
 <div class="search-box">
-    <input 
-        type="text" 
+
+    <input
+        type="text"
         id="urlInput"
-        placeholder="Masukkan URL Channel YouTube /videos"
+        placeholder="Masukkan URL Channel YouTube"
     >
-    <button class="search-btn" onclick="fetchThumbnails()">
+
+    <button class="search-btn" onclick="loadChannel()">
         Ambil Thumbnail
     </button>
+
 </div>
 
 <div id="loading" class="loading"></div>
@@ -155,143 +158,199 @@
 <div id="result" class="thumb-container"></div>
 
 <div class="history">
-    <h3>📜 History Pencarian</h3>
+
+    <h2>📜 History Pencarian</h2>
+
     <div id="historyList"></div>
+
 </div>
 
 <script>
 
-const result = document.getElementById("result");
 const loading = document.getElementById("loading");
+const result = document.getElementById("result");
 const historyList = document.getElementById("historyList");
 
 loadHistory();
 
-async function fetchThumbnails() {
+
+// ========================================
+// MAIN
+// ========================================
+async function loadChannel() {
 
     let url = document.getElementById("urlInput").value.trim();
 
     if (!url) {
-        alert("Masukkan URL terlebih dahulu");
+        alert("Masukkan URL channel YouTube");
         return;
-    }
-
-    // Auto tambah /videos
-    if (!url.includes("/videos")) {
-        url = url.replace(/\/$/, "") + "/videos";
     }
 
     saveHistory(url);
 
     result.innerHTML = "";
-    loading.innerHTML = "⏳ Mengambil data...";
+    loading.innerHTML = "⏳ Mengambil data channel...";
 
     try {
 
-        // Gunakan proxy publik supaya tidak kena CORS
-        const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+        // ==========================
+        // FETCH CHANNEL HTML
+        // ==========================
+        const proxy =
+            "https://corsproxy.io/?" +
+            encodeURIComponent(url);
 
         const res = await fetch(proxy);
+
         const html = await res.text();
 
-        if (!html) {
-            loading.innerHTML = "❌ Gagal mengambil data";
+        // ==========================
+        // AMBIL CHANNEL ID
+        // ==========================
+        let channelId = null;
+
+        const regex =
+            /"channelId":"(UC[a-zA-Z0-9_-]+)"/;
+
+        const match = html.match(regex);
+
+        if (match) {
+            channelId = match[1];
+        }
+
+        if (!channelId) {
+            loading.innerHTML =
+                "❌ Channel ID tidak ditemukan";
             return;
         }
 
-        // Ambil semua videoId
-        const matches = [...html.matchAll(/"videoId":"(.*?)"/g)];
+        loading.innerHTML =
+            "📡 Mengambil RSS feed...";
 
-        const ids = [...new Set(
-            matches
-                .map(m => m[1])
-                .filter(id => id.length === 11)
-        )];
+        // ==========================
+        // RSS FEED
+        // ==========================
+        const rssUrl =
+            "https://www.youtube.com/feeds/videos.xml?channel_id=" +
+            channelId;
 
-        if (ids.length === 0) {
-            loading.innerHTML = "❌ Thumbnail tidak ditemukan";
+        const rssProxy =
+            "https://corsproxy.io/?" +
+            encodeURIComponent(rssUrl);
+
+        const rssRes = await fetch(rssProxy);
+
+        const xmlText = await rssRes.text();
+
+        const parser = new DOMParser();
+
+        const xml =
+            parser.parseFromString(
+                xmlText,
+                "application/xml"
+            );
+
+        const entries =
+            xml.querySelectorAll("entry");
+
+        if (entries.length === 0) {
+
+            loading.innerHTML =
+                "❌ Video tidak ditemukan";
+
             return;
         }
 
-        loading.innerHTML = `🎬 Ditemukan ${ids.length} thumbnail`;
+        loading.innerHTML =
+            `🎬 Ditemukan ${entries.length} video`;
 
-        // Ambil judul video
-        const titleMatches = [...html.matchAll(/"title":{"runs":\[{"text":"(.*?)"/g)];
+        entries.forEach(entry => {
 
-        ids.forEach((id, index) => {
+            const videoId =
+                entry.querySelector("video\\:videoId")
+                ?.textContent;
 
-            const title = titleMatches[index]
-                ? decodeHTML(titleMatches[index][1])
-                : "No title";
+            const title =
+                entry.querySelector("title")
+                ?.textContent;
 
-            const thumb = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+            const published =
+                entry.querySelector("published")
+                ?.textContent;
 
-            result.innerHTML += `
-                <div class="thumb">
+            const thumb =
+                `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
 
-                    <img 
-                        src="${thumb}" 
-                        loading="lazy"
-                        onerror="this.src='https://i.ytimg.com/vi/${id}/hqdefault.jpg'"
+            const card = document.createElement("div");
+
+            card.className = "thumb";
+
+            card.innerHTML = `
+
+                <img
+                    src="${thumb}"
+                    loading="lazy"
+                    onerror="
+                        this.src='https://i.ytimg.com/vi/${videoId}/hqdefault.jpg'
+                    "
+                >
+
+                <div class="title">
+                    ${escapeHtml(title)}
+                </div>
+
+                <div class="small">
+                    📅 ${formatDate(published)}
+                </div>
+
+                <div class="actions">
+
+                    <a
+                        class="download"
+                        href="${thumb}"
+                        download="${sanitize(title)}.jpg"
                     >
+                        ⬇ Download
+                    </a>
 
-                    <div class="title">${escapeHtml(title)}</div>
-
-                    <div class="actions">
-
-                        <a 
-                            class="download"
-                            href="${thumb}"
-                            download="${sanitize(title)}.jpg"
-                        >
-                            ⬇ Download
-                        </a>
-
-                        <button 
-                            class="copybtn"
-                            onclick="copyImage('${thumb}', this)"
-                        >
-                            📋 Copy Image
-                        </button>
-
-                    </div>
+                    <button
+                        class="copybtn"
+                        onclick="copyImage('${thumb}', this)"
+                    >
+                        📋 Copy Image
+                    </button>
 
                 </div>
+
             `;
+
+            result.appendChild(card);
+
         });
 
     } catch (err) {
+
         console.error(err);
-        loading.innerHTML = "❌ Gagal mengambil data (kemungkinan diblokir CORS)";
+
+        loading.innerHTML =
+            "❌ Gagal mengambil data";
     }
 }
 
-function sanitize(str) {
-    return str.replace(/[^a-zA-Z0-9\- ]/g, "").substring(0, 50);
-}
 
-function escapeHtml(text) {
-    return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-}
 
-function decodeHTML(html) {
-    const txt = document.createElement("textarea");
-    txt.innerHTML = html;
-    return txt.value;
-}
-
-// ==========================
+// ========================================
 // COPY IMAGE
-// ==========================
+// ========================================
 async function copyImage(url, btn) {
 
     try {
 
-        const res = await fetch(url);
-        const blob = await res.blob();
+        const response =
+            await fetch(url);
+
+        const blob =
+            await response.blob();
 
         await navigator.clipboard.write([
             new ClipboardItem({
@@ -310,50 +369,104 @@ async function copyImage(url, btn) {
     } catch (err) {
 
         console.error(err);
-        alert("❌ Gagal copy image");
+
+        alert("❌ Copy gagal");
     }
 }
 
-// ==========================
-// LOCAL STORAGE HISTORY
-// ==========================
+
+
+// ========================================
+// HISTORY LOCAL STORAGE
+// ========================================
 function saveHistory(url) {
 
-    let history = JSON.parse(localStorage.getItem("yt_history")) || [];
+    let history =
+        JSON.parse(
+            localStorage.getItem("yt_history")
+        ) || [];
 
     if (!history.includes(url)) {
         history.unshift(url);
     }
 
-    // Batasi 20 history
     history = history.slice(0, 20);
 
-    localStorage.setItem("yt_history", JSON.stringify(history));
+    localStorage.setItem(
+        "yt_history",
+        JSON.stringify(history)
+    );
 
     loadHistory();
 }
 
 function loadHistory() {
 
-    const history = JSON.parse(localStorage.getItem("yt_history")) || [];
+    const history =
+        JSON.parse(
+            localStorage.getItem("yt_history")
+        ) || [];
 
     historyList.innerHTML = "";
 
     history.forEach(url => {
 
-        const a = document.createElement("a");
+        const a =
+            document.createElement("a");
 
         a.href = "#";
+
         a.className = "history-item";
+
         a.innerText = url;
 
         a.onclick = () => {
-            document.getElementById("urlInput").value = url;
-            fetchThumbnails();
+
+            document.getElementById(
+                "urlInput"
+            ).value = url;
+
+            loadChannel();
         };
 
         historyList.appendChild(a);
+
     });
+}
+
+
+
+// ========================================
+// HELPERS
+// ========================================
+function sanitize(str) {
+
+    return str
+        .replace(/[^a-zA-Z0-9\- ]/g, "")
+        .substring(0, 50);
+}
+
+function escapeHtml(text) {
+
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+function formatDate(dateStr) {
+
+    const date =
+        new Date(dateStr);
+
+    return date.toLocaleDateString(
+        "id-ID",
+        {
+            day:"numeric",
+            month:"long",
+            year:"numeric"
+        }
+    );
 }
 
 </script>
