@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Ajaib 2</title>
+<title>YouTube Thumbnail Scraper</title>
 
 <style>
 
@@ -15,51 +15,39 @@
 body{
     margin:0;
     padding:30px;
-    background:#0f0f0f;
-    color:white;
+    background:#111;
+    color:#fff;
     font-family:Arial,sans-serif;
     text-align:center;
 }
 
-h1{
+h2{
     margin-bottom:25px;
 }
 
-.search-box{
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    flex-wrap:wrap;
-}
-
 input{
-    width:700px;
-    max-width:100%;
-    padding:15px;
+    width:70%;
+    max-width:700px;
+    padding:14px;
     border:none;
+    border-radius:10px;
     outline:none;
-    border-radius:12px;
-    background:#1c1c1c;
+    background:#1d1d1d;
     color:white;
     font-size:15px;
 }
 
 button{
+    padding:14px 20px;
     border:none;
-    border-radius:12px;
-    padding:15px 20px;
+    border-radius:10px;
     cursor:pointer;
     font-weight:bold;
 }
 
 .search-btn{
-    background:#00ffc3;
-    color:black;
-}
-
-.loading{
-    margin-top:25px;
-    color:#00ffc3;
+    background:#00ffcc;
+    color:#000;
 }
 
 .thumb-container{
@@ -72,26 +60,25 @@ button{
 
 .thumb{
     width:340px;
-    background:#1a1a1a;
-    border-radius:16px;
+    background:#1b1b1b;
+    border-radius:14px;
     overflow:hidden;
     padding:12px;
 }
 
 .thumb img{
     width:100%;
-    border-radius:12px;
+    border-radius:10px;
 }
 
 .title{
-    margin-top:12px;
-    font-size:15px;
+    margin-top:10px;
     font-weight:bold;
     line-height:1.5;
 }
 
-.small{
-    margin-top:6px;
+.views{
+    margin-top:5px;
     color:#aaa;
     font-size:13px;
 }
@@ -99,36 +86,42 @@ button{
 .actions{
     margin-top:15px;
     display:flex;
-    gap:10px;
     justify-content:center;
+    gap:10px;
     flex-wrap:wrap;
 }
 
 .download{
-    background:#00ffc3;
-    color:black;
-    text-decoration:none;
+    display:inline-block;
     padding:10px 14px;
-    border-radius:10px;
+    background:#00ffcc;
+    color:#000;
+    text-decoration:none;
+    border-radius:8px;
     font-size:14px;
     font-weight:bold;
 }
 
 .copybtn{
-    background:#ffb100;
-    color:black;
+    background:#ffaa00;
+    color:#000;
 }
 
 .history{
-    margin-top:60px;
+    margin-top:50px;
 }
 
-.history-item{
+.history a{
+    color:#00ffcc;
     display:block;
-    color:#00ffc3;
-    margin:8px 0;
+    margin:8px;
     text-decoration:none;
     word-break:break-all;
+}
+
+.loading{
+    margin-top:20px;
+    color:#00ffcc;
 }
 
 </style>
@@ -136,19 +129,20 @@ button{
 
 <body>
 
-<h1>🔥 YouTube Thumbnail Scraper</h1>
+<h2>🔥 YouTube Thumbnail Scraper</h2>
 
-<div class="search-box">
+<div>
 
     <input
         type="text"
-        id="urlInput"
-        placeholder="Masukkan URL Channel YouTube"
+        id="rssInput"
+        value="https://www.youtube.com/feeds/videos.xml?channel_id=UCw_9u2xhPtFGnmZOZ1gEInw"
+        placeholder="Masukkan URL RSS YouTube"
     >
 
     <button
         class="search-btn"
-        onclick="loadChannel()"
+        onclick="loadRSS()"
     >
         Ambil Thumbnail
     </button>
@@ -161,7 +155,7 @@ button{
 
 <div class="history">
 
-    <h2>📜 History Pencarian</h2>
+    <h3>📜 History Pencarian</h3>
 
     <div id="historyList"></div>
 
@@ -169,11 +163,11 @@ button{
 
 <script>
 
-const loading =
-    document.getElementById("loading");
-
 const result =
     document.getElementById("result");
+
+const loading =
+    document.getElementById("loading");
 
 const historyList =
     document.getElementById("historyList");
@@ -182,109 +176,45 @@ loadHistory();
 
 
 // ======================================
-// MAIN
+// LOAD RSS
 // ======================================
-async function loadChannel() {
+async function loadRSS() {
 
-    let url =
-        document.getElementById("urlInput")
+    const rssUrl =
+        document.getElementById("rssInput")
         .value
         .trim();
 
-    if (!url) {
-        alert("Masukkan URL channel");
+    if (!rssUrl) {
+        alert("Masukkan URL RSS");
         return;
     }
 
-    saveHistory(url);
+    saveHistory(rssUrl);
 
     result.innerHTML = "";
 
     loading.innerHTML =
-        "⏳ Mengambil data channel...";
+        "⏳ Mengambil RSS feed...";
 
     try {
 
         // =========================
-        // FETCH CHANNEL PAGE
+        // PROXY CORS
         // =========================
         const proxy =
             "https://corsproxy.io/?" +
-            encodeURIComponent(url);
+            encodeURIComponent(rssUrl);
 
         const response =
             await fetch(proxy);
 
-        const html =
+        const xmlText =
             await response.text();
 
         // =========================
-        // AMBIL CHANNEL ID
+        // PARSE XML
         // =========================
-        let channelId = null;
-
-        // METHOD 1
-        let match =
-            html.match(/"channelId":"(UC[\w-]+)"/);
-
-        if (match) {
-            channelId = match[1];
-        }
-
-        // METHOD 2
-        if (!channelId) {
-
-            match =
-                html.match(
-                    /https:\/\/www\.youtube\.com\/channel\/(UC[\w-]+)/
-                );
-
-            if (match) {
-                channelId = match[1];
-            }
-        }
-
-        // METHOD 3
-        if (!channelId) {
-
-            match =
-                html.match(
-                    /"externalId":"(UC[\w-]+)"/
-                );
-
-            if (match) {
-                channelId = match[1];
-            }
-        }
-
-        if (!channelId) {
-
-            loading.innerHTML =
-                "❌ Channel ID tidak ditemukan";
-
-            return;
-        }
-
-        loading.innerHTML =
-            "📡 Mengambil RSS Feed...";
-
-        // =========================
-        // RSS FEED
-        // =========================
-        const rssUrl =
-            "https://www.youtube.com/feeds/videos.xml?channel_id=" +
-            channelId;
-
-        const rssProxy =
-            "https://corsproxy.io/?" +
-            encodeURIComponent(rssUrl);
-
-        const rssRes =
-            await fetch(rssProxy);
-
-        const xmlText =
-            await rssRes.text();
-
         const parser =
             new DOMParser();
 
@@ -300,13 +230,13 @@ async function loadChannel() {
         if (entries.length === 0) {
 
             loading.innerHTML =
-                "❌ Tidak ada video";
+                "❌ Video tidak ditemukan";
 
             return;
         }
 
         loading.innerHTML =
-            `🎬 Ditemukan ${entries.length} video`;
+            `🎬 Ditemukan ${entries.length} thumbnail`;
 
         entries.forEach(entry => {
 
@@ -317,11 +247,11 @@ async function loadChannel() {
 
             const title =
                 entry.querySelector("title")
-                ?.textContent;
+                ?.textContent || "No title";
 
             const published =
                 entry.querySelector("published")
-                ?.textContent;
+                ?.textContent || "";
 
             const thumb =
                 `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
@@ -345,7 +275,7 @@ async function loadChannel() {
                     ${escapeHtml(title)}
                 </div>
 
-                <div class="small">
+                <div class="views">
                     📅 ${formatDate(published)}
                 </div>
 
@@ -379,7 +309,7 @@ async function loadChannel() {
         console.error(err);
 
         loading.innerHTML =
-            "❌ Gagal mengambil data";
+            "❌ Gagal mengambil RSS";
     }
 }
 
@@ -418,21 +348,21 @@ async function copyImage(url, btn) {
 
         console.error(err);
 
-        alert("❌ Copy gagal");
+        alert("❌ Gagal copy image");
     }
 }
 
 
 
 // ======================================
-// HISTORY
+// HISTORY LOCAL STORAGE
 // ======================================
 function saveHistory(url) {
 
     let history =
         JSON.parse(
             localStorage.getItem(
-                "yt_history"
+                "yt_rss_history"
             )
         ) || [];
 
@@ -444,7 +374,7 @@ function saveHistory(url) {
         history.slice(0, 20);
 
     localStorage.setItem(
-        "yt_history",
+        "yt_rss_history",
         JSON.stringify(history)
     );
 
@@ -456,7 +386,7 @@ function loadHistory() {
     const history =
         JSON.parse(
             localStorage.getItem(
-                "yt_history"
+                "yt_rss_history"
             )
         ) || [];
 
@@ -469,18 +399,15 @@ function loadHistory() {
 
         a.href = "#";
 
-        a.className =
-            "history-item";
-
         a.innerText = url;
 
         a.onclick = () => {
 
             document.getElementById(
-                "urlInput"
+                "rssInput"
             ).value = url;
 
-            loadChannel();
+            loadRSS();
         };
 
         historyList.appendChild(a);
