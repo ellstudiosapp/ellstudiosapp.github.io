@@ -36,9 +36,16 @@
       border-bottom:1px solid #eee;
     }
 
+    .topbar > .d-flex {
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 10px;
+    }
+
     .brand{
       font-weight:bold;
       color:#1a73e8;
+      flex: 0 0 auto;
     }
 
     .search-box{
@@ -49,6 +56,8 @@
       align-items:center;
       gap:10px;
       width:100%;
+      min-width: 0;
+      flex: 1 1 auto;
     }
 
     .search-box input{
@@ -56,6 +65,10 @@
       outline:none;
       background:transparent;
       width:100%;
+    }
+
+    .topbar .btn {
+      white-space: nowrap;
     }
 
     /* CATEGORY */
@@ -179,16 +192,21 @@
   <!-- TOP BAR -->
   <div class="topbar">
     <div class="d-flex align-items-center gap-2">
-      <div class="brand">EllStudiosApp</div>
+      <div class="brand"><h4><b>EllStudiosApp</b></h4></div>
 
       <div class="search-box flex-grow-1">
         <i class="bi bi-search"></i>
         <input type="text" id="searchInput" placeholder="Search apps...">
       </div>
 
-      <i class="bi bi-person-circle fs-4"></i>
+      <a href="https://play.google.com/store/apps/dev?id=7422067693753831105" target="_blank" class="btn btn-primary btn-sm">
+        <i class="bi bi-google-play"></i> EllStudiosApp
+      </a>
+
     </div>
   </div>
+
+ 
 
   <!-- CATEGORY -->
 <!-- <div class="container mt-2">
@@ -234,8 +252,10 @@
 
 <!-- FOOTER -->
 <footer>
-  <h5>EllStudiosApp</h5>
-  <p>Developer aplikasi edukasi & utilitas.</p>
+  <div>
+    <h5>EllStudiosApp</h5>
+    <small>© 2026 EllStudiosApp. All rights reserved.</small>
+  </div>
 </footer>
 
 <script src="apps.js"></script>
