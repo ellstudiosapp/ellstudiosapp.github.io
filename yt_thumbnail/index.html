@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Ajaib</title>
+<title>Ajaib 2</title>
 
 <style>
 
@@ -33,13 +33,13 @@ h1{
 }
 
 input{
-    width:650px;
+    width:700px;
     max-width:100%;
     padding:15px;
     border:none;
     outline:none;
     border-radius:12px;
-    background:#1d1d1d;
+    background:#1c1c1c;
     color:white;
     font-size:15px;
 }
@@ -72,11 +72,10 @@ button{
 
 .thumb{
     width:340px;
-    background:#1b1b1b;
+    background:#1a1a1a;
     border-radius:16px;
     overflow:hidden;
     padding:12px;
-    box-shadow:0 0 10px rgba(0,0,0,0.4);
 }
 
 .thumb img{
@@ -86,9 +85,15 @@ button{
 
 .title{
     margin-top:12px;
-    font-weight:bold;
     font-size:15px;
+    font-weight:bold;
     line-height:1.5;
+}
+
+.small{
+    margin-top:6px;
+    color:#aaa;
+    font-size:13px;
 }
 
 .actions{
@@ -100,9 +105,9 @@ button{
 }
 
 .download{
-    text-decoration:none;
     background:#00ffc3;
     color:black;
+    text-decoration:none;
     padding:10px 14px;
     border-radius:10px;
     font-size:14px;
@@ -120,16 +125,10 @@ button{
 
 .history-item{
     display:block;
-    margin:10px 0;
     color:#00ffc3;
+    margin:8px 0;
     text-decoration:none;
     word-break:break-all;
-}
-
-.small{
-    margin-top:8px;
-    color:#999;
-    font-size:13px;
 }
 
 </style>
@@ -147,7 +146,10 @@ button{
         placeholder="Masukkan URL Channel YouTube"
     >
 
-    <button class="search-btn" onclick="loadChannel()">
+    <button
+        class="search-btn"
+        onclick="loadChannel()"
+    >
         Ambil Thumbnail
     </button>
 
@@ -167,69 +169,108 @@ button{
 
 <script>
 
-const loading = document.getElementById("loading");
-const result = document.getElementById("result");
-const historyList = document.getElementById("historyList");
+const loading =
+    document.getElementById("loading");
+
+const result =
+    document.getElementById("result");
+
+const historyList =
+    document.getElementById("historyList");
 
 loadHistory();
 
 
-// ========================================
+// ======================================
 // MAIN
-// ========================================
+// ======================================
 async function loadChannel() {
 
-    let url = document.getElementById("urlInput").value.trim();
+    let url =
+        document.getElementById("urlInput")
+        .value
+        .trim();
 
     if (!url) {
-        alert("Masukkan URL channel YouTube");
+        alert("Masukkan URL channel");
         return;
     }
 
     saveHistory(url);
 
     result.innerHTML = "";
-    loading.innerHTML = "⏳ Mengambil data channel...";
+
+    loading.innerHTML =
+        "⏳ Mengambil data channel...";
 
     try {
 
-        // ==========================
-        // FETCH CHANNEL HTML
-        // ==========================
+        // =========================
+        // FETCH CHANNEL PAGE
+        // =========================
         const proxy =
             "https://corsproxy.io/?" +
             encodeURIComponent(url);
 
-        const res = await fetch(proxy);
+        const response =
+            await fetch(proxy);
 
-        const html = await res.text();
+        const html =
+            await response.text();
 
-        // ==========================
+        // =========================
         // AMBIL CHANNEL ID
-        // ==========================
+        // =========================
         let channelId = null;
 
-        const regex =
-            /"channelId":"(UC[a-zA-Z0-9_-]+)"/;
-
-        const match = html.match(regex);
+        // METHOD 1
+        let match =
+            html.match(/"channelId":"(UC[\w-]+)"/);
 
         if (match) {
             channelId = match[1];
         }
 
+        // METHOD 2
         if (!channelId) {
+
+            match =
+                html.match(
+                    /https:\/\/www\.youtube\.com\/channel\/(UC[\w-]+)/
+                );
+
+            if (match) {
+                channelId = match[1];
+            }
+        }
+
+        // METHOD 3
+        if (!channelId) {
+
+            match =
+                html.match(
+                    /"externalId":"(UC[\w-]+)"/
+                );
+
+            if (match) {
+                channelId = match[1];
+            }
+        }
+
+        if (!channelId) {
+
             loading.innerHTML =
                 "❌ Channel ID tidak ditemukan";
+
             return;
         }
 
         loading.innerHTML =
-            "📡 Mengambil RSS feed...";
+            "📡 Mengambil RSS Feed...";
 
-        // ==========================
+        // =========================
         // RSS FEED
-        // ==========================
+        // =========================
         const rssUrl =
             "https://www.youtube.com/feeds/videos.xml?channel_id=" +
             channelId;
@@ -238,11 +279,14 @@ async function loadChannel() {
             "https://corsproxy.io/?" +
             encodeURIComponent(rssUrl);
 
-        const rssRes = await fetch(rssProxy);
+        const rssRes =
+            await fetch(rssProxy);
 
-        const xmlText = await rssRes.text();
+        const xmlText =
+            await rssRes.text();
 
-        const parser = new DOMParser();
+        const parser =
+            new DOMParser();
 
         const xml =
             parser.parseFromString(
@@ -256,7 +300,7 @@ async function loadChannel() {
         if (entries.length === 0) {
 
             loading.innerHTML =
-                "❌ Video tidak ditemukan";
+                "❌ Tidak ada video";
 
             return;
         }
@@ -267,8 +311,9 @@ async function loadChannel() {
         entries.forEach(entry => {
 
             const videoId =
-                entry.querySelector("video\\:videoId")
-                ?.textContent;
+                entry.querySelector(
+                    "video\\:videoId"
+                )?.textContent;
 
             const title =
                 entry.querySelector("title")
@@ -281,7 +326,8 @@ async function loadChannel() {
             const thumb =
                 `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
 
-            const card = document.createElement("div");
+            const card =
+                document.createElement("div");
 
             card.className = "thumb";
 
@@ -339,18 +385,18 @@ async function loadChannel() {
 
 
 
-// ========================================
+// ======================================
 // COPY IMAGE
-// ========================================
+// ======================================
 async function copyImage(url, btn) {
 
     try {
 
-        const response =
+        const res =
             await fetch(url);
 
         const blob =
-            await response.blob();
+            await res.blob();
 
         await navigator.clipboard.write([
             new ClipboardItem({
@@ -358,9 +404,11 @@ async function copyImage(url, btn) {
             })
         ]);
 
-        const old = btn.innerHTML;
+        const old =
+            btn.innerHTML;
 
-        btn.innerHTML = "✅ Copied!";
+        btn.innerHTML =
+            "✅ Copied!";
 
         setTimeout(() => {
             btn.innerHTML = old;
@@ -376,21 +424,24 @@ async function copyImage(url, btn) {
 
 
 
-// ========================================
-// HISTORY LOCAL STORAGE
-// ========================================
+// ======================================
+// HISTORY
+// ======================================
 function saveHistory(url) {
 
     let history =
         JSON.parse(
-            localStorage.getItem("yt_history")
+            localStorage.getItem(
+                "yt_history"
+            )
         ) || [];
 
     if (!history.includes(url)) {
         history.unshift(url);
     }
 
-    history = history.slice(0, 20);
+    history =
+        history.slice(0, 20);
 
     localStorage.setItem(
         "yt_history",
@@ -404,7 +455,9 @@ function loadHistory() {
 
     const history =
         JSON.parse(
-            localStorage.getItem("yt_history")
+            localStorage.getItem(
+                "yt_history"
+            )
         ) || [];
 
     historyList.innerHTML = "";
@@ -416,7 +469,8 @@ function loadHistory() {
 
         a.href = "#";
 
-        a.className = "history-item";
+        a.className =
+            "history-item";
 
         a.innerText = url;
 
@@ -436,9 +490,9 @@ function loadHistory() {
 
 
 
-// ========================================
+// ======================================
 // HELPERS
-// ========================================
+// ======================================
 function sanitize(str) {
 
     return str
