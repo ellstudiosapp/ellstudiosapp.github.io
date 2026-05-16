@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EllStudiosApp</title>
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:Arial, sans-serif;
+    }
+
+    body{
+      background:#0f172a;
+      color:white;
+      overflow-x:hidden;
+    }
+
+    .bg{
+      position:fixed;
+      width:100%;
+      height:100%;
+      background:
+      radial-gradient(circle at top left,#2563eb55,transparent 35%),
+      radial-gradient(circle at bottom right,#9333ea55,transparent 35%);
+      z-index:-1;
+    }
+
+    header{
+      padding:20px 8%;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      backdrop-filter:blur(10px);
+    }
+
+    .logo{
+      font-size:28px;
+      font-weight:bold;
+      color:#60a5fa;
+    }
+
+    nav a{
+      text-decoration:none;
+      color:white;
+      margin-left:24px;
+      transition:0.3s;
+      font-size:15px;
+    }
+
+    nav a:hover{
+      color:#60a5fa;
+    }
+
+    .hero{
+      min-height:90vh;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 8%;
+      flex-wrap:wrap;
+      gap:40px;
+    }
+
+    .hero-text{
+      flex:1;
+      min-width:300px;
+    }
+
+    .hero-text h1{
+      font-size:60px;
+      line-height:1.1;
+      margin-bottom:20px;
+    }
+
+    .hero-text span{
+      color:#60a5fa;
+    }
+
+    .hero-text p{
+      color:#cbd5e1;
+      font-size:18px;
+      line-height:1.8;
+      margin-bottom:30px;
+      max-width:600px;
+    }
+
+    .btn-group{
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      padding:14px 28px;
+      border-radius:14px;
+      border:none;
+      cursor:pointer;
+      font-size:16px;
+      transition:0.3s;
+      text-decoration:none;
+      display:inline-block;
+    }
+
+    .btn-primary{
+      background:#2563eb;
+      color:white;
+    }
+
+    .btn-primary:hover{
+      background:#1d4ed8;
+      transform:translateY(-2px);
+    }
+
+    .btn-outline{
+      background:transparent;
+      border:1px solid #60a5fa;
+      color:#60a5fa;
+    }
+
+    .btn-outline:hover{
+      background:#60a5fa;
+      color:white;
+    }
+
+    .phone{
+      flex:1;
+      min-width:280px;
+      display:flex;
+      justify-content:center;
+    }
+
+    .phone-card{
+      width:300px;
+      height:600px;
+      background:linear-gradient(180deg,#1e293b,#0f172a);
+      border-radius:40px;
+      padding:20px;
+      position:relative;
+      box-shadow:0 20px 60px rgba(0,0,0,0.5);
+      animation:float 4s ease-in-out infinite;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+
+    @keyframes float{
+      0%,100%{
+        transform:translateY(0px);
+      }
+      50%{
+        transform:translateY(-15px);
+      }
+    }
+
+    .screen{
+      width:100%;
+      height:100%;
+      border-radius:30px;
+      background:linear-gradient(135deg,#2563eb,#7c3aed);
+      padding:30px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+    }
+
+    .screen h2{
+      font-size:32px;
+      margin-bottom:20px;
+    }
+
+    .screen p{
+      line-height:1.7;
+      color:#e2e8f0;
+    }
+
+    .features{
+      padding:100px 8%;
+    }
+
+    .section-title{
+      text-align:center;
+      margin-bottom:60px;
+    }
+
+    .section-title h2{
+      font-size:42px;
+      margin-bottom:16px;
+    }
+
+    .section-title p{
+      color:#94a3b8;
+    }
+
+    .feature-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:24px;
+    }
+
+    .card{
+      background:rgba(255,255,255,0.05);
+      padding:30px;
+      border-radius:24px;
+      transition:0.3s;
+      backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    .card:hover{
+      transform:translateY(-8px);
+      background:rgba(255,255,255,0.08);
+    }
+
+    .card .icon{
+      font-size:42px;
+      margin-bottom:18px;
+    }
+
+    .card h3{
+      margin-bottom:12px;
+      font-size:22px;
+    }
+
+    .card p{
+      color:#cbd5e1;
+      line-height:1.7;
+    }
+
+    footer{
+      padding:40px 8%;
+      text-align:center;
+      color:#94a3b8;
+      border-top:1px solid rgba(255,255,255,0.08);
+      margin-top:80px;
+    }
+
+    @media(max-width:900px){
+
+      .hero{
+        flex-direction:column;
+        padding-top:60px;
+      }
+
+      .hero-text h1{
+        font-size:42px;
+      }
+
+      nav{
+        display:none;
+      }
+
+      .phone-card{
+        width:260px;
+        height:520px;
+      }
+
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="bg"></div>
+
+<header>
+  <div class="logo">EllStudiosApp</div>
+
+  <nav>
+    <a href="#">Home</a>
+    <a href="#features">Features</a>
+    <a href="#">Apps</a>
+    <a href="#">Contact</a>
+  </nav>
+</header>
+
+<section class="hero">
+
+  <div class="hero-text">
+    <h1>
+      Create Better <span>Learning Apps</span>
+    </h1>
+
+    <p>
+      EllStudiosApp menghadirkan aplikasi edukasi, pembelajaran,
+      utilitas, kesehatan, dan latihan soal interaktif dengan
+      desain modern, ringan, dan mudah digunakan untuk semua pengguna.
+    </p>
+
+    <div class="btn-group">
+      <a href="https://play.google.com/store/apps/dev?id=7422067693753831105" class="btn btn-primary">
+        Google Play
+      </a>
+
+      <a href="#" class="btn btn-outline">
+        Learn More
+      </a>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="phone-card">
+      <div class="screen">
+        <h2>EllStudiosApp</h2>
+        <p>
+          Interactive apps for education,
+          learning, quizzes, and everyday productivity.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<section class="features" id="features">
+
+  <div class="section-title">
+    <h2>Why Choose Us</h2>
+    <p>
+      Modern educational experiences designed for everyone.
+    </p>
+  </div>
+
+  <div class="feature-grid">
+
+    <div class="card">
+      <div class="icon">📚</div>
+      <h3>Educational Apps</h3>
+      <p>
+        Interactive educational applications for children,
+        students, and modern digital learning.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="icon">⚡</div>
+      <h3>Fast & Lightweight</h3>
+      <p>
+        Optimized performance with lightweight applications
+        and smooth user experience.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="icon">🎨</div>
+      <h3>Modern Design</h3>
+      <p>
+        Clean, modern, and user-friendly interfaces
+        with attractive visual appearance.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="icon">📱</div>
+      <h3>Android Focused</h3>
+      <p>
+        Designed specifically for Android users
+        with responsive and adaptive layouts.
+      </p>
+    </div>
+
+  </div>
+
+</section>
+
+<footer>
+  © <span id="year"></span> EllStudiosApp — All Rights Reserved
+</footer>
+
+<script>
+  document.getElementById("year").innerText =
+  new Date().getFullYear();
+
+  const cards = document.querySelectorAll(".card");
+
+  cards.forEach((card, index) => {
+    card.style.opacity = "0";
+    card.style.transform = "translateY(30px)";
+
+    setTimeout(() => {
+      card.style.transition = "0.6s ease";
+      card.style.opacity = "1";
+      card.style.transform = "translateY(0)";
+    }, 200 * index);
+  });
+</script>
+
+</body>
+</html>
