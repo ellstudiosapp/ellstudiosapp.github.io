@@ -2,97 +2,54 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Google Scholar Scraper</title>
 
-<title>Google Scholar Scraper</title>
+    <link rel="stylesheet"
+          href="https://pyscript.net/releases/2024.1.1/core.css">
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script type="module"
+            src="https://pyscript.net/releases/2024.1.1/core.js">
+    </script>
 
-<style>
-body{
-    font-family: Arial;
-    background:#f5f7fb;
-    padding:30px;
-}
+    <style>
+        body{
+            font-family:Arial;
+            background:#f5f5f5;
+            padding:30px;
+        }
 
-.container{
-    max-width:1200px;
-    margin:auto;
-    background:white;
-    padding:25px;
-    border-radius:10px;
-    box-shadow:0 5px 15px rgba(0,0,0,0.1);
-}
+        .container{
+            max-width:900px;
+            margin:auto;
+            background:white;
+            padding:25px;
+            border-radius:10px;
+        }
 
-h1{
-    color:#1F4E79;
-}
+        input{
+            width:100%;
+            padding:12px;
+            margin-top:10px;
+        }
 
-input{
-    width:100%;
-    padding:12px;
-    margin-top:10px;
-    border:1px solid #ccc;
-    border-radius:5px;
-}
+        button{
+            padding:12px 20px;
+            background:#1F4E79;
+            color:white;
+            border:none;
+            margin-top:10px;
+            cursor:pointer;
+        }
 
-button{
-    background:#1F4E79;
-    color:white;
-    border:none;
-    padding:12px 20px;
-    margin-top:15px;
-    border-radius:5px;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#163a5c;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:20px;
-}
-
-th{
-    background:#1F4E79;
-    color:white;
-    padding:10px;
-}
-
-td{
-    border:1px solid #ddd;
-    padding:8px;
-}
-
-tr:nth-child(even){
-    background:#f1f5f9;
-}
-
-.stats{
-    display:flex;
-    gap:20px;
-    margin-top:20px;
-}
-
-.card{
-    flex:1;
-    background:#2E75B6;
-    color:white;
-    padding:20px;
-    border-radius:8px;
-    text-align:center;
-}
-
-.loading{
-    margin-top:15px;
-    color:#1F4E79;
-    font-weight:bold;
-}
-</style>
+        pre{
+            background:#111;
+            color:#00ff88;
+            padding:15px;
+            border-radius:5px;
+            overflow:auto;
+        }
+    </style>
 </head>
 
 <body>
@@ -101,216 +58,29 @@ tr:nth-child(even){
 
 <h1>Google Scholar Scraper</h1>
 
-<p>Masukkan Scholar ID atau URL Google Scholar</p>
+<input type="text"
+       id="scholarInput"
+       placeholder="Masukkan Scholar ID atau URL">
 
-<input type="text" id="scholarInput"
-placeholder="Contoh: C74trMkAAAAJ">
+<button py-click="run_scraper()">
+    Ambil Data & Export Excel
+</button>
 
-<button onclick="loadScholar()">Ambil Data</button>
+<h3>Log:</h3>
 
-<button onclick="exportExcel()">Export Excel</button>
-
-<div class="loading" id="loading"></div>
-
-<div id="profile"></div>
-
-<div class="stats" id="stats"></div>
-
-<table id="pubTable">
-<thead>
-<tr>
-<th>No</th>
-<th>Judul</th>
-<th>Penulis</th>
-<th>Venue</th>
-<th>Sitasi</th>
-<th>Tahun</th>
-</tr>
-</thead>
-
-<tbody></tbody>
-</table>
+<pre id="output"></pre>
 
 </div>
 
-<script>
+<py-config>
+packages = [
+    "requests",
+    "beautifulsoup4",
+    "openpyxl"
+]
+</py-config>
 
-let scholarData = null;
-
-function extractScholarId(input){
-
-    input = input.trim();
-
-    if(input.includes("user=")){
-        let url = new URL(input);
-        return url.searchParams.get("user");
-    }
-
-    return input;
-}
-
-async function loadScholar(){
-
-    const input = document.getElementById("scholarInput").value;
-
-    if(!input){
-        alert("Input kosong");
-        return;
-    }
-
-    const scholarId = extractScholarId(input);
-
-    document.getElementById("loading").innerHTML =
-        "Mengambil data Google Scholar...";
-
-    try{
-
-        const url =
-        `https://lab.darmajaya.ac.id/schoolar/ws/googlescholar.php?user=${scholarId}`;
-
-        const response = await fetch(url);
-
-        const data = await response.json();
-
-        scholarData = data;
-
-        renderProfile(data);
-        renderStats(data);
-        renderPublications(data.publications || []);
-
-        document.getElementById("loading").innerHTML =
-            "Berhasil mengambil data";
-
-    }catch(err){
-
-        console.error(err);
-
-        document.getElementById("loading").innerHTML =
-            "Gagal mengambil data";
-    }
-}
-
-function renderProfile(data){
-
-    document.getElementById("profile").innerHTML = `
-        <h2>${data.author_name || '-'}</h2>
-        <p>${data.affiliation || ''}</p>
-    `;
-}
-
-function renderStats(data){
-
-    document.getElementById("stats").innerHTML = `
-
-        <div class="card">
-            <h3>Total Sitasi</h3>
-            <h1>${data.total_citations || 0}</h1>
-        </div>
-
-        <div class="card">
-            <h3>H-Index</h3>
-            <h1>${data.h_index || 0}</h1>
-        </div>
-
-        <div class="card">
-            <h3>i10-Index</h3>
-            <h1>${data.i10_index || 0}</h1>
-        </div>
-    `;
-}
-
-function renderPublications(publications){
-
-    const tbody =
-        document.querySelector("#pubTable tbody");
-
-    tbody.innerHTML = "";
-
-    publications.forEach((pub, index)=>{
-
-        tbody.innerHTML += `
-            <tr>
-                <td>${index+1}</td>
-                <td>
-                    <a href="${pub.link}" target="_blank">
-                        ${pub.title}
-                    </a>
-                </td>
-                <td>${pub.authors || ''}</td>
-                <td>${pub.venue || ''}</td>
-                <td>${pub.citations || 0}</td>
-                <td>${pub.year || ''}</td>
-            </tr>
-        `;
-    });
-}
-
-function exportExcel(){
-
-    if(!scholarData){
-        alert("Belum ada data");
-        return;
-    }
-
-    const wb = XLSX.utils.book_new();
-
-    const profileSheet = [
-        ["Scholar ID", scholarData.scholar_id],
-        ["Nama", scholarData.author_name],
-        ["Institusi", scholarData.affiliation],
-        ["Total Sitasi", scholarData.total_citations],
-        ["H-Index", scholarData.h_index],
-        ["i10-Index", scholarData.i10_index]
-    ];
-
-    const ws1 = XLSX.utils.aoa_to_sheet(profileSheet);
-
-    XLSX.utils.book_append_sheet(
-        wb,
-        ws1,
-        "Profil"
-    );
-
-    const pubSheet = [
-        [
-            "No",
-            "Judul",
-            "Penulis",
-            "Venue",
-            "Sitasi",
-            "Tahun",
-            "Link"
-        ]
-    ];
-
-    scholarData.publications.forEach((pub, i)=>{
-
-        pubSheet.push([
-            i+1,
-            pub.title,
-            pub.authors,
-            pub.venue,
-            pub.citations,
-            pub.year,
-            pub.link
-        ]);
-    });
-
-    const ws2 = XLSX.utils.aoa_to_sheet(pubSheet);
-
-    XLSX.utils.book_append_sheet(
-        wb,
-        ws2,
-        "Publikasi"
-    );
-
-    XLSX.writeFile(
-        wb,
-        `scholar_${scholarData.author_name}.xlsx`
-    );
-}
-
-</script>
+<py-script src="./scholar_scraper.py"></py-script>
 
 </body>
 </html>
