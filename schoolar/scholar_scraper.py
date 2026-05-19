@@ -1,19 +1,20 @@
-```python
 import re
-from datetime import datetime
+import base64
+
+from io import BytesIO
 from urllib.parse import urlparse, parse_qs
 
 import requests
+
 from bs4 import BeautifulSoup
 
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, PatternFill
 
 from pyscript import document
-from js import Blob, URL
-import base64
-from io import BytesIO
+
+from js import eval
+
 
 HEADERS = {
     "User-Agent": (
@@ -24,26 +25,35 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+
 output = document.getElementById("output")
+
 
 def log(text):
     output.innerText += str(text) + "\n"
 
-def extract_scholar_id(input_str: str) -> str:
+
+def extract_scholar_id(input_str):
+
     input_str = input_str.strip()
 
     if input_str.startswith("http"):
+
         parsed = urlparse(input_str)
+
         qs = parse_qs(parsed.query)
 
         if "user" in qs:
             return qs["user"][0]
 
-        raise ValueError("URL tidak mengandung parameter user")
+        raise ValueError(
+            "URL tidak mengandung parameter user"
+        )
 
     return input_str
 
-def fetch_scholar_data(scholar_id: str):
+
+def fetch_scholar_data(scholar_id):
 
     base_url = "https://scholar.google.com/citations"
 
@@ -56,62 +66,128 @@ def fetch_scholar_data(scholar_id: str):
 
     log(f"Mengambil data Scholar ID: {scholar_id}")
 
-    resp = requests.get(
+    response = requests.get(
         base_url,
         params=params,
         headers=HEADERS
     )
 
-    soup = BeautifulSoup(resp.text, "html.parser")
+    response.raise_for_status()
 
-    name_tag = soup.find("div", id="gsc_prf_in")
-    author_name = name_tag.get_text(strip=True) if name_tag else "Unknown"
+    soup = BeautifulSoup(
+        response.text,
+        "html.parser"
+    )
 
-    aff_tag = soup.find("div", class_="gsc_prf_il")
-    affiliation = aff_tag.get_text(strip=True) if aff_tag else ""
+    # Nama Penulis
+    name_tag = soup.find(
+        "div",
+        id="gsc_prf_in"
+    )
 
-    stats_cells = soup.select("#gsc_rsb_st td.gsc_rsb_std")
+    author_name = (
+        name_tag.get_text(strip=True)
+        if name_tag
+        else "Unknown"
+    )
 
-    total_citations = stats_cells[0].get_text(strip=True) if len(stats_cells) > 0 else "0"
-    h_index = stats_cells[2].get_text(strip=True) if len(stats_cells) > 2 else "0"
-    i10_index = stats_cells[4].get_text(strip=True) if len(stats_cells) > 4 else "0"
+    # Afiliasi
+    aff_tag = soup.find(
+        "div",
+        class_="gsc_prf_il"
+    )
 
-    citations_per_year = {}
+    affiliation = (
+        aff_tag.get_text(strip=True)
+        if aff_tag
+        else ""
+    )
 
-    years = soup.select(".gsc_g_t")
-    scores = soup.select(".gsc_g_al")
+    # Statistik
+    stats_cells = soup.select(
+        "#gsc_rsb_st td.gsc_rsb_std"
+    )
 
-    for y, s in zip(years, scores):
-        citations_per_year[y.get_text(strip=True)] = s.get_text(strip=True)
+    total_citations = (
+        stats_cells[0].get_text(strip=True)
+        if len(stats_cells) > 0
+        else "0"
+    )
+
+    h_index = (
+        stats_cells[2].get_text(strip=True)
+        if len(stats_cells) > 2
+        else "0"
+    )
+
+    i10_index = (
+        stats_cells[4].get_text(strip=True)
+        if len(stats_cells) > 4
+        else "0"
+    )
 
     publications = []
 
-    for row in soup.select("#gsc_a_t .gsc_a_tr"):
+    for row in soup.select(
+        "#gsc_a_t .gsc_a_tr"
+    ):
 
         title_tag = row.select_one(".gsc_a_at")
 
-        title = title_tag.get_text(strip=True) if title_tag else ""
+        title = (
+            title_tag.get_text(strip=True)
+            if title_tag
+            else ""
+        )
 
         link = (
-            "https://scholar.google.com" + title_tag["href"]
+            "https://scholar.google.com" +
+            title_tag["href"]
             if title_tag and title_tag.get("href")
             else ""
         )
 
         gray = row.select(".gs_gray")
 
-        authors = gray[0].get_text(strip=True) if len(gray) > 0 else ""
-        venue = gray[1].get_text(strip=True) if len(gray) > 1 else ""
+        authors = (
+            gray[0].get_text(strip=True)
+            if len(gray) > 0
+            else ""
+        )
+
+        venue = (
+            gray[1].get_text(strip=True)
+            if len(gray) > 1
+            else ""
+        )
 
         cite_tag = row.select_one(".gsc_a_ac")
-        cite_text = cite_tag.get_text(strip=True) if cite_tag else ""
 
-        citations = int(cite_text) if cite_text.isdigit() else 0
+        cite_text = (
+            cite_tag.get_text(strip=True)
+            if cite_tag
+            else ""
+        )
+
+        citations = (
+            int(cite_text)
+            if cite_text.isdigit()
+            else 0
+        )
 
         year_tag = row.select_one(".gsc_a_h")
-        year_text = year_tag.get_text(strip=True) if year_tag else ""
 
-        year = int(year_text) if year_text.isdigit() else 0
+        year_text = (
+            year_tag.get_text(strip=True)
+            if year_tag
+            else ""
+        )
+
+        year = (
+            int(year_text)
+            if year_text.isdigit()
+            else 0
+        )
 
         publications.append({
             "title": title,
@@ -123,35 +199,61 @@ def fetch_scholar_data(scholar_id: str):
         })
 
     return {
-        "scholar_id": scholar_id,
         "author_name": author_name,
         "affiliation": affiliation,
         "total_citations": total_citations,
         "h_index": h_index,
         "i10_index": i10_index,
-        "citations_per_year": citations_per_year,
         "publications": publications,
     }
 
-def save_excel(data):
+
+def create_excel(data):
 
     wb = Workbook()
 
     ws = wb.active
+
     ws.title = "Profil"
+
+    # Header
+    ws.merge_cells("A1:B1")
 
     ws["A1"] = "PROFIL GOOGLE SCHOLAR"
 
-    ws["A3"] = "Nama"
-    ws["B3"] = data["author_name"]
+    ws["A1"].font = Font(
+        bold=True,
+        color="FFFFFF",
+        size=14
+    )
 
-    ws["A4"] = "Institusi"
-    ws["B4"] = data["affiliation"]
+    ws["A1"].fill = PatternFill(
+        "solid",
+        start_color="1F4E79"
+    )
 
-    ws["A5"] = "Total Sitasi"
-    ws["B5"] = data["total_citations"]
+    # Profil
+    rows = [
+        ("Nama", data["author_name"]),
+        ("Institusi", data["affiliation"]),
+        ("Total Sitasi", data["total_citations"]),
+        ("H-Index", data["h_index"]),
+        ("i10-Index", data["i10_index"]),
+    ]
 
-    ws2 = wb.create_sheet("Publikasi")
+    row_num = 3
+
+    for label, value in rows:
+
+        ws.cell(row_num, 1, label)
+        ws.cell(row_num, 2, value)
+
+        row_num += 1
+
+    # Sheet publikasi
+    ws2 = wb.create_sheet(
+        "Publikasi"
+    )
 
     headers = [
         "No",
@@ -159,21 +261,48 @@ def save_excel(data):
         "Penulis",
         "Venue",
         "Sitasi",
-        "Tahun"
+        "Tahun",
+        "Link"
     ]
 
-    for col, h in enumerate(headers, start=1):
-        ws2.cell(1, col, h)
+    for col, header in enumerate(headers, start=1):
 
-    for i, pub in enumerate(data["publications"], start=2):
+        cell = ws2.cell(1, col, header)
 
-        ws2.cell(i, 1, i-1)
+        cell.font = Font(
+            bold=True,
+            color="FFFFFF"
+        )
+
+        cell.fill = PatternFill(
+            "solid",
+            start_color="1F4E79"
+        )
+
+    # Data publikasi
+    for i, pub in enumerate(
+        data["publications"],
+        start=2
+    ):
+
+        ws2.cell(i, 1, i - 1)
         ws2.cell(i, 2, pub["title"])
         ws2.cell(i, 3, pub["authors"])
         ws2.cell(i, 4, pub["venue"])
         ws2.cell(i, 5, pub["citations"])
         ws2.cell(i, 6, pub["year"])
+        ws2.cell(i, 7, pub["link"])
 
+    # Lebar kolom
+    widths = [5, 50, 35, 35, 10, 10, 60]
+
+    for i, width in enumerate(widths, start=1):
+
+        ws2.column_dimensions[
+            chr(64 + i)
+        ].width = width
+
+    # Simpan ke memory
     bio = BytesIO()
 
     wb.save(bio)
@@ -186,19 +315,29 @@ def save_excel(data):
 
     filename = (
         "scholar_" +
-        re.sub(r"[^\w\-]", "_", data["author_name"]) +
+        re.sub(
+            r"[^\w\-]",
+            "_",
+            data["author_name"]
+        ) +
         ".xlsx"
     )
 
     js_code = f"""
+
     const link = document.createElement('a');
-    link.href = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{data64}";
+
+    link.href =
+    "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{data64}";
+
     link.download = "{filename}";
+
     link.click();
+
     """
 
-    from js import eval
     eval(js_code)
+
 
 def run_scraper(event=None):
 
@@ -206,25 +345,41 @@ def run_scraper(event=None):
 
         output.innerText = ""
 
-        input_el = document.getElementById("scholarInput")
+        user_input = document.getElementById(
+            "scholarInput"
+        ).value
 
-        user_input = input_el.value.strip()
+        if not user_input:
 
-        scholar_id = extract_scholar_id(user_input)
+            log("Input kosong")
+
+            return
+
+        scholar_id = extract_scholar_id(
+            user_input
+        )
 
         log(f"Scholar ID: {scholar_id}")
 
-        data = fetch_scholar_data(scholar_id)
+        log("Mengambil data Google Scholar...")
+
+        data = fetch_scholar_data(
+            scholar_id
+        )
 
         log(f"Nama: {data['author_name']}")
-        log(f"Sitasi: {data['total_citations']}")
-        log(f"Publikasi: {len(data['publications'])}")
+        log(f"Institusi: {data['affiliation']}")
+        log(f"Total Sitasi: {data['total_citations']}")
+        log(f"H-Index: {data['h_index']}")
+        log(f"i10-Index: {data['i10_index']}")
+        log(f"Total Publikasi: {len(data['publications'])}")
 
-        save_excel(data)
+        log("Membuat file Excel...")
 
-        log("Excel berhasil dibuat")
+        create_excel(data)
+
+        log("Selesai")
 
     except Exception as e:
 
         log(f"ERROR: {str(e)}")
-```
