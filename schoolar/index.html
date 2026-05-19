@@ -3,6 +3,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Scholar Scraper</title>
 
     <link rel="stylesheet"
@@ -13,72 +14,99 @@
     </script>
 
     <style>
+
         body{
-            font-family:Arial;
-            background:#f5f5f5;
+            font-family:Arial, sans-serif;
+            background:#f5f7fb;
+            margin:0;
             padding:30px;
         }
 
         .container{
-            max-width:900px;
+            max-width:1000px;
             margin:auto;
             background:white;
             padding:25px;
             border-radius:10px;
+            box-shadow:0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        h1{
+            color:#1F4E79;
+            margin-top:0;
         }
 
         input{
             width:100%;
             padding:12px;
+            border:1px solid #ccc;
+            border-radius:5px;
+            font-size:16px;
             margin-top:10px;
+            box-sizing:border-box;
         }
 
         button{
+            margin-top:15px;
             padding:12px 20px;
+            border:none;
             background:#1F4E79;
             color:white;
-            border:none;
-            margin-top:10px;
+            border-radius:5px;
             cursor:pointer;
+            font-size:15px;
         }
 
-        pre{
+        button:hover{
+            background:#163a5c;
+        }
+
+        #output{
             background:#111;
             color:#00ff88;
             padding:15px;
-            border-radius:5px;
+            border-radius:8px;
+            margin-top:20px;
+            min-height:200px;
+            white-space:pre-wrap;
             overflow:auto;
         }
+
     </style>
+
+    <py-config>
+        packages = [
+            "requests",
+            "beautifulsoup4",
+            "openpyxl"
+        ]
+    </py-config>
+
 </head>
 
 <body>
 
 <div class="container">
 
-<h1>Google Scholar Scraper</h1>
+    <h1>Google Scholar Scraper</h1>
 
-<input type="text"
-       id="scholarInput"
-       placeholder="Masukkan Scholar ID atau URL">
+    <p>
+        Masukkan Google Scholar ID atau URL
+    </p>
 
-<button py-click="run_scraper()">
-    Ambil Data & Export Excel
-</button>
+    <input
+        type="text"
+        id="scholarInput"
+        placeholder="Contoh: C74trMkAAAAJ"
+    >
 
-<h3>Log:</h3>
+    <button py-click="run_scraper()">
+        Ambil Data & Export Excel
+    </button>
 
-<pre id="output"></pre>
+    <div id="output"></div>
 
 </div>
-
-<py-config>
-packages = [
-    "requests",
-    "beautifulsoup4",
-    "openpyxl"
-]
-</py-config>
 
 <py-script src="./scholar_scraper.py"></py-script>
 
