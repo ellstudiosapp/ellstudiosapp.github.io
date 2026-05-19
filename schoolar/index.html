@@ -1,524 +1,317 @@
+```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Scholar</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, Helvetica, sans-serif;
-    }
+<title>Google Scholar Scraper</title>
 
-    body {
-      background: #0f172a;
-      color: white;
-      padding: 20px;
-    }
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-    .container {
-      max-width: 1300px;
-      margin: auto;
-    }
+<style>
+body{
+    font-family: Arial;
+    background:#f5f7fb;
+    padding:30px;
+}
 
-    .header {
-      text-align: center;
-      margin-bottom: 25px;
-    }
+.container{
+    max-width:1200px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
 
-    .header h1 {
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
+h1{
+    color:#1F4E79;
+}
 
-    .header p {
-      color: #cbd5e1;
-    }
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:1px solid #ccc;
+    border-radius:5px;
+}
 
-    .controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
+button{
+    background:#1F4E79;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    margin-top:15px;
+    border-radius:5px;
+    cursor:pointer;
+}
 
-    .controls input {
-      flex: 1;
-      min-width: 220px;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      outline: none;
-      background: #1e293b;
-      color: white;
-    }
+button:hover{
+    background:#163a5c;
+}
 
-    .controls button {
-      padding: 12px 20px;
-      border: none;
-      border-radius: 10px;
-      background: #2563eb;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-    }
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
 
-    .controls button:hover {
-      background: #1d4ed8;
-    }
+th{
+    background:#1F4E79;
+    color:white;
+    padding:10px;
+}
 
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 15px;
-      margin-bottom: 25px;
-    }
+td{
+    border:1px solid #ddd;
+    padding:8px;
+}
 
-    .card {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.08);
-    }
+tr:nth-child(even){
+    background:#f1f5f9;
+}
 
-    .card h3 {
-      font-size: 14px;
-      color: #94a3b8;
-      margin-bottom: 10px;
-    }
+.stats{
+    display:flex;
+    gap:20px;
+    margin-top:20px;
+}
 
-    .card .value {
-      font-size: 28px;
-      font-weight: bold;
-    }
+.card{
+    flex:1;
+    background:#2E75B6;
+    color:white;
+    padding:20px;
+    border-radius:8px;
+    text-align:center;
+}
 
-    .table-container {
-      overflow-x: auto;
-      background: #1e293b;
-      border-radius: 16px;
-      padding: 15px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      vertical-align: top;
-    }
-
-    th {
-      background: #0f172a;
-      position: sticky;
-      top: 0;
-    }
-
-    tr:hover {
-      background: rgba(255,255,255,0.04);
-    }
-
-    a {
-      color: #60a5fa;
-      text-decoration: none;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #cbd5e1;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 5px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      background: rgba(37,99,235,0.2);
-      color: #93c5fd;
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 25px;
-      color: #94a3b8;
-      font-size: 14px;
-    }
-
-    @media(max-width: 768px) {
-      .header h1 {
-        font-size: 24px;
-      }
-
-      th, td {
-        font-size: 14px;
-      }
-    }
-  </style>
+.loading{
+    margin-top:15px;
+    color:#1F4E79;
+    font-weight:bold;
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
 
-  <div class="header">
-    <h1>📚 Google Scholar Dashboard</h1>
-    <p>Dashboard publikasi dosen berbasis HTML + JavaScript</p>
-  </div>
+<h1>Google Scholar Scraper</h1>
 
-  <div class="controls">
-    <input type="text" id="searchInput" placeholder="Cari judul publikasi...">
-    <button onclick="loadData()">Refresh Data</button>
-  </div>
+<p>Masukkan Scholar ID atau URL Google Scholar</p>
 
-  <div class="card-grid">
-    <div class="card">
-      <h3>Total Publikasi</h3>
-      <div class="value" id="totalPublications">0</div>
-    </div>
+<input type="text" id="scholarInput"
+placeholder="Contoh: C74trMkAAAAJ">
 
-    <div class="card">
-      <h3>Total Sitasi</h3>
-      <div class="value" id="totalCitations">0</div>
-    </div>
+<button onclick="loadScholar()">Ambil Data</button>
 
-    <div class="card">
-      <h3>Total Dosen</h3>
-      <div class="value" id="totalAuthors">0</div>
-    </div>
+<button onclick="exportExcel()">Export Excel</button>
 
-    <div class="card">
-      <h3>Tahun Terbaru</h3>
-      <div class="value" id="latestYear">-</div>
-    </div>
-  </div>
+<div class="loading" id="loading"></div>
 
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Dosen</th>
-          <th>Judul</th>
-          <th>Penulis</th>
-          <th>Publikasi</th>
-          <th>Sitasi</th>
-          <th>Tahun</th>
-        </tr>
-      </thead>
-      <tbody id="publicationTable">
-        <tr>
-          <td colspan="7" class="loading">Loading data...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+<div id="profile"></div>
 
-  <div class="footer">
-    Dibuat dengan HTML + Vanilla JavaScript • Support GitHub Pages
-  </div>
+<div class="stats" id="stats"></div>
+
+<table id="pubTable">
+<thead>
+<tr>
+<th>No</th>
+<th>Judul</th>
+<th>Penulis</th>
+<th>Venue</th>
+<th>Sitasi</th>
+<th>Tahun</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+</table>
 
 </div>
 
 <script>
 
-/*
-  ========================================================
-  KONFIGURASI DOSEN
-  ========================================================
-*/
+let scholarData = null;
 
-const dosenList = [
-  {
-    name: 'MUHAMMAD FAUZAN AZIMA',
-    scholarId: 'luSmsaIAAAAJ'
-  },
-  {
-    name: 'SITI NUR LAILA',
-    scholarId: 'C74trMkAAAAJ'
-  }
-];
+function extractScholarId(input){
 
-/*
-  ========================================================
-  ENDPOINT
-  ========================================================
+    input = input.trim();
 
-  Karena GitHub Pages tidak bisa menjalankan PHP,
-  kita memanfaatkan endpoint PHP yang sudah ada.
-
-  Jika endpoint anda mendukung CORS:
-  gunakan langsung.
-
-  Jika CORS bermasalah:
-  gunakan proxy corsproxy.io
-*/
-
-/*
-  ========================================================
-  GOOGLE SCHOLAR SCRAPER VERSION JAVASCRIPT
-  ========================================================
-
-  Adaptasi dari file googlescholar.php
-  yang sebelumnya menggunakan:
-  - PHP
-  - simple_html_dom
-
-  Kini diubah menjadi:
-  - Fetch HTML
-  - DOMParser JavaScript
-  - Pure Client Side
-
-*/
-
-const USE_PROXY = true;
-
-function buildScholarUrl(scholarId) {
-
-  const scholarUrl = `https://scholar.google.com/citations?user=${scholarId}&view_op=list_works&sortby=pubdate`;
-
-  if (USE_PROXY) {
-    return 'https://corsproxy.io/?' + encodeURIComponent(scholarUrl);
-  }
-
-  return scholarUrl;
-}
-
-async function fetchGoogleScholar(scholarId) {
-
-  try {
-
-    const response = await fetch(buildScholarUrl(scholarId));
-    const htmlText = await response.text();
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    /*
-      ====================================================
-      TOTAL CITATIONS
-      ====================================================
-    */
-
-    let totalCitations = 0;
-
-    const citationElement = doc.querySelector('#gsc_rsb_st td.gsc_rsb_std');
-
-    if (citationElement) {
-      totalCitations = parseInt(citationElement.textContent.trim()) || 0;
+    if(input.includes("user=")){
+        let url = new URL(input);
+        return url.searchParams.get("user");
     }
 
-    /*
-      ====================================================
-      CITATIONS PER YEAR
-      ====================================================
-    */
-
-    const citationsPerYear = {};
-
-    const years = doc.querySelectorAll('.gsc_g_t');
-    const scores = doc.querySelectorAll('.gsc_g_al');
-
-    years.forEach((yearEl, index) => {
-
-      const year = yearEl.textContent.trim();
-      const score = scores[index]?.textContent.trim() || 0;
-
-      citationsPerYear[year] = Number(score);
-    });
-
-    /*
-      ====================================================
-      PUBLICATIONS
-      ====================================================
-    */
-
-    const publications = [];
-
-    const rows = doc.querySelectorAll('#gsc_a_t .gsc_a_tr');
-
-    rows.forEach(row => {
-
-      const titleEl = row.querySelector('.gsc_a_at');
-      const grayEls = row.querySelectorAll('.gs_gray');
-      const citationEl = row.querySelector('.gsc_a_ac');
-      const yearEl = row.querySelector('.gsc_a_h');
-
-      const publication = {
-        title: titleEl?.textContent.trim() || '-',
-        authors: grayEls[0]?.textContent.trim() || '-',
-        venue: grayEls[1]?.textContent.trim() || '-',
-        link: titleEl ? 'https://scholar.google.com' + titleEl.getAttribute('href') : '#',
-        citations: Number(citationEl?.textContent.trim()) || 0,
-        year: Number(yearEl?.textContent.trim()) || 0
-      };
-
-      publications.push(publication);
-    });
-
-    return {
-      total_citations: totalCitations,
-      citations_per_year: citationsPerYear,
-      publications: publications
-    };
-
-  } catch (error) {
-
-    console.error('Google Scholar Error:', error);
-
-    return {
-      total_citations: 0,
-      citations_per_year: {},
-      publications: []
-    };
-  }
+    return input;
 }
 
-let allPublications = [];
+async function loadScholar(){
 
-async function loadData() {
+    const input = document.getElementById("scholarInput").value;
 
-  const table = document.getElementById('publicationTable');
-  table.innerHTML = `
-    <tr>
-      <td colspan="7" class="loading">Mengambil data Google Scholar...</td>
-    </tr>
-  `;
-
-  allPublications = [];
-
-  let totalCitations = 0;
-
-  try {
-
-    for (const dosen of dosenList) {
-
-      const data = await fetchGoogleScholar(dosen.scholarId);
-
-      totalCitations += Number(data.total_citations || 0);
-
-      const publications = data.publications || [];
-
-      publications.forEach(pub => {
-        allPublications.push({
-          author: dosen.name,
-          title: pub.title || '-',
-          authors: pub.authors || '-',
-          venue: pub.venue || '-',
-          citations: pub.citations || 0,
-          year: pub.year || '-',
-          link: pub.link || '#'
-        });
-      });
+    if(!input){
+        alert("Input kosong");
+        return;
     }
 
-    renderTable(allPublications);
+    const scholarId = extractScholarId(input);
 
-    document.getElementById('totalPublications').innerText = allPublications.length;
-    document.getElementById('totalCitations').innerText = totalCitations;
-    document.getElementById('totalAuthors').innerText = dosenList.length;
+    document.getElementById("loading").innerHTML =
+        "Mengambil data Google Scholar...";
 
-    const latest = Math.max(...allPublications.map(x => Number(x.year || 0)));
-    document.getElementById('latestYear').innerText = latest || '-';
+    try{
 
-  } catch (error) {
+        const url =
+        `https://lab.darmajaya.ac.id/schoolar/ws/googlescholar.php?user=${scholarId}`;
 
-    console.error(error);
+        const response = await fetch(url);
 
-    table.innerHTML = `
-      <tr>
-        <td colspan="7" class="loading">
-          Gagal mengambil data.<br><br>
-          Kemungkinan:
-          <br>• Endpoint tidak mendukung CORS
-          <br>• Google Scholar memblokir request
-          <br>• Server sedang offline
-        </td>
-      </tr>
-    `;
-  }
+        const data = await response.json();
+
+        scholarData = data;
+
+        renderProfile(data);
+        renderStats(data);
+        renderPublications(data.publications || []);
+
+        document.getElementById("loading").innerHTML =
+            "Berhasil mengambil data";
+
+    }catch(err){
+
+        console.error(err);
+
+        document.getElementById("loading").innerHTML =
+            "Gagal mengambil data";
+    }
 }
 
-function renderTable(data) {
+function renderProfile(data){
 
-  const table = document.getElementById('publicationTable');
-
-  if (!data.length) {
-    table.innerHTML = `
-      <tr>
-        <td colspan="7" class="loading">Tidak ada data ditemukan</td>
-      </tr>
+    document.getElementById("profile").innerHTML = `
+        <h2>${data.author_name || '-'}</h2>
+        <p>${data.affiliation || ''}</p>
     `;
-    return;
-  }
-
-  table.innerHTML = '';
-
-  data.sort((a, b) => Number(b.year) - Number(a.year));
-
-  data.forEach((item, index) => {
-
-    table.innerHTML += `
-      <tr>
-        <td>${index + 1}</td>
-        <td>
-          <div><strong>${item.author}</strong></div>
-        </td>
-        <td>
-          <a href="${item.link}" target="_blank">
-            ${item.title}
-          </a>
-        </td>
-        <td>${item.authors}</td>
-        <td>
-          <span class="badge">${item.venue}</span>
-        </td>
-        <td>${item.citations}</td>
-        <td>${item.year}</td>
-      </tr>
-    `;
-  });
 }
 
-/*
-  ========================================================
-  SEARCH FILTER
-  ========================================================
-*/
+function renderStats(data){
 
-const searchInput = document.getElementById('searchInput');
+    document.getElementById("stats").innerHTML = `
 
-searchInput.addEventListener('input', function() {
+        <div class="card">
+            <h3>Total Sitasi</h3>
+            <h1>${data.total_citations || 0}</h1>
+        </div>
 
-  const keyword = this.value.toLowerCase();
+        <div class="card">
+            <h3>H-Index</h3>
+            <h1>${data.h_index || 0}</h1>
+        </div>
 
-  const filtered = allPublications.filter(item => {
+        <div class="card">
+            <h3>i10-Index</h3>
+            <h1>${data.i10_index || 0}</h1>
+        </div>
+    `;
+}
 
-    return (
-      item.title.toLowerCase().includes(keyword) ||
-      item.author.toLowerCase().includes(keyword) ||
-      item.authors.toLowerCase().includes(keyword) ||
-      item.venue.toLowerCase().includes(keyword)
+function renderPublications(publications){
+
+    const tbody =
+        document.querySelector("#pubTable tbody");
+
+    tbody.innerHTML = "";
+
+    publications.forEach((pub, index)=>{
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${index+1}</td>
+                <td>
+                    <a href="${pub.link}" target="_blank">
+                        ${pub.title}
+                    </a>
+                </td>
+                <td>${pub.authors || ''}</td>
+                <td>${pub.venue || ''}</td>
+                <td>${pub.citations || 0}</td>
+                <td>${pub.year || ''}</td>
+            </tr>
+        `;
+    });
+}
+
+function exportExcel(){
+
+    if(!scholarData){
+        alert("Belum ada data");
+        return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    const profileSheet = [
+        ["Scholar ID", scholarData.scholar_id],
+        ["Nama", scholarData.author_name],
+        ["Institusi", scholarData.affiliation],
+        ["Total Sitasi", scholarData.total_citations],
+        ["H-Index", scholarData.h_index],
+        ["i10-Index", scholarData.i10_index]
+    ];
+
+    const ws1 = XLSX.utils.aoa_to_sheet(profileSheet);
+
+    XLSX.utils.book_append_sheet(
+        wb,
+        ws1,
+        "Profil"
     );
-  });
 
-  renderTable(filtered);
-});
+    const pubSheet = [
+        [
+            "No",
+            "Judul",
+            "Penulis",
+            "Venue",
+            "Sitasi",
+            "Tahun",
+            "Link"
+        ]
+    ];
 
-/*
-  ========================================================
-  START APP
-  ========================================================
-*/
+    scholarData.publications.forEach((pub, i)=>{
 
-loadData();
+        pubSheet.push([
+            i+1,
+            pub.title,
+            pub.authors,
+            pub.venue,
+            pub.citations,
+            pub.year,
+            pub.link
+        ]);
+    });
+
+    const ws2 = XLSX.utils.aoa_to_sheet(pubSheet);
+
+    XLSX.utils.book_append_sheet(
+        wb,
+        ws2,
+        "Publikasi"
+    );
+
+    XLSX.writeFile(
+        wb,
+        `scholar_${scholarData.author_name}.xlsx`
+    );
+}
 
 </script>
 
 </body>
 </html>
+```
