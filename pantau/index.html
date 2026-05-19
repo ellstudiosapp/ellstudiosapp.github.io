@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitoring Pendukung Keputusan</title>
+<style>
+:root {
+    color-scheme: dark light;
+    --bg: #eef2fb;
+    --surface: #ffffff;
+    --surface-soft: #f7f9ff;
+    --text-primary: #111827;
+    --text-secondary: #475569;
+    --border: rgba(100, 116, 139, 0.15);
+    --accent: #4f46e5;
+    --accent-2: #2563eb;
+    --accent-soft: rgba(79, 70, 229, 0.12);
+    --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Inter", "Segoe UI", sans-serif;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef2fb 100%);
+    color: var(--text-primary);
+}
+a {
+    color: inherit;
+    text-decoration: none;
+}
+.page {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 24px 18px 36px;
+}
+.header {
+    display: grid;
+    gap: 18px;
+    padding: 30px 30px 28px;
+    border-radius: 28px;
+    background: radial-gradient(circle at top left, rgba(79, 70, 229, 0.18), transparent 38%),
+                linear-gradient(180deg, #4f46e5 0%, #2563eb 100%);
+    color: white;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 16px;
+    z-index: 10;
+}
+.header .top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.header h1 {
+    margin: 0;
+    font-size: clamp(2rem, 2.4vw, 2.8rem);
+    line-height: 1.05;
+}
+.header p {
+    margin: 0;
+    color: rgba(255,255,255,.85);
+    max-width: 780px;
+    font-size: 1rem;
+}
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 22px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.24);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .2s ease, background .2s ease;
+}
+.button:hover {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.28);
+}
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-top: 28px;
+}
+.stat-card,
+.card,
+.insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.06);
+}
+.stat-card {
+    padding: 22px;
+}
+.stat-card h2 {
+    margin: 0 0 10px;
+    font-size: 1.2rem;
+}
+.stat-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.65;
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 24px;
+}
+.card {
+    overflow: hidden;
+}
+.card-header {
+    padding: 20px 24px 0;
+}
+.card-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+}
+.chart {
+    min-height: 360px;
+    padding: 0 24px 20px;
+}
+.chart > div {
+    min-height: 360px;
+}
+.insight-card {
+    padding: 24px;
+    grid-column: 1 / -1;
+}
+.insight-card h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+}
+.insight-card p {
+    margin: 14px 0 0;
+    color: var(--text-secondary);
+    line-height: 1.75;
+}
+@media (max-width: 720px) {
+    .header {
+        padding: 26px 20px 22px;
+    }
+    .chart {
+        min-height: 320px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="page">
+    <header class="header">
+        <div class="top">
+            <div>
+                <p style="margin:0; font-size:.9rem; letter-spacing:.15em; text-transform:uppercase; opacity:.8;">Dasbor Analitik</p>
+                <h1>Monitoring Tren Pencarian Publik</h1>
+            </div>
+            <button class="button" id="refreshButton">Segarkan Data</button>
+        </div>
+        <p>Ringkasan topik populer di Google Trends untuk CPNS, PPPK, UTBK, Polri, dan topik lokal dalam periode 5 tahun dan 12 bulan.</p>
+    </header>
+
+    <section class="stats">
+        <article class="stat-card">
+            <h2>🔥 Trending Tertinggi</h2>
+            <p>CPNS berada pada puncak pencarian saat ini dengan minat konsisten dalam beberapa bulan terakhir.</p>
+        </article>
+        <article class="stat-card">
+            <h2>📈 Tren Naik</h2>
+            <p>PPPK menunjukkan pertumbuhan pencarian seiring jadwal seleksi dan pengumuman formasi.</p>
+        </article>
+        <article class="stat-card">
+            <h2>📉 Tren Turun</h2>
+            <p>UTBK cenderung stabil setelah periode ujian, dengan penurunan pencarian pada luar musim.</p>
+        </article>
+    </section>
+
+    <section class="grid" id="charts">
+        <article class="card">
+            <div class="card-header"><h2>CPNS 5 Tahun</h2></div>
+            <div class="chart" id="chart-cpns-5y"></div>
+        </article>
+        <article class="card">
+            <div class="card-header"><h2>CPNS 12 Bulan</h2></div>
+            <div class="chart" id="chart-cpns-12m"></div>
+        </article>
+        <article class="card" style="grid-column: span 2;">
+            <div class="card-header"><h2>CPNS vs PPPK (12 Bulan)</h2></div>
+            <div class="chart" id="chart-cpns-pppk-12m"></div>
+        </article>
+        <article class="card">
+            <div class="card-header"><h2>UTBK 5 Tahun</h2></div>
+            <div class="chart" id="chart-utbk-5y"></div>
+        </article>
+        <article class="card">
+            <div class="card-header"><h2>UTBK 12 Bulan</h2></div>
+            <div class="chart" id="chart-utbk-12m"></div>
+        </article>
+        <article class="card">
+            <div class="card-header"><h2>Bintara Polri 5 Tahun</h2></div>
+            <div class="chart" id="chart-polri-5y"></div>
+        </article>
+        <article class="card">
+            <div class="card-header"><h2>Bintara Polri 12 Bulan</h2></div>
+            <div class="chart" id="chart-polri-12m"></div>
+        </article>
+        <article class="card">
+            <div class="card-header"><h2>Kamus Bahasa Lampung 5 Tahun</h2></div>
+            <div class="chart" id="chart-lampung-5y"></div>
+        </article>
+        <article class="card">
+            <div class="card-header"><h2>Kamus Bahasa Lampung 12 Bulan</h2></div>
+            <div class="chart" id="chart-lampung-12m"></div>
+        </article>
+        <article class="card">
+            <div class="card-header"><h2>Wallpaper Islami 5 Tahun</h2></div>
+            <div class="chart" id="chart-wallpaper-5y"></div>
+        </article>
+        <article class="card">
+            <div class="card-header"><h2>Wallpaper Islami 12 Bulan</h2></div>
+            <div class="chart" id="chart-wallpaper-12m"></div>
+        </article>
+    </section>
+
+    <section class="insight-card">
+        <h2>📊 Insight Otomatis</h2>
+        <p>Minat terhadap CPNS dan PPPK menunjukkan pola musiman, dengan puncak pencarian saat pembukaan pendaftaran. UTBK biasanya stabil kecuali menjelang ujian dan pengumuman, sementara topik lokal seperti Kamus Bahasa Lampung meningkat saat ada kebutuhan materi belajar bahasa.</p>
+    </section>
+</div>
+
+<script src="https://ssl.gstatic.com/trends_nrtr/3700_RC01/embed_loader.js"></script>
+<script>
+const chartConfigs = [
+    {
+        id: 'chart-cpns-5y',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'cpns', geo: 'ID', time: 'today 5-y' }] },
+        params: { exploreQuery: 'date=today%205-y&geo=ID&q=cpns', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    },
+    {
+        id: 'chart-cpns-12m',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'cpns', geo: 'ID', time: 'today 12-m' }] },
+        params: { exploreQuery: 'geo=ID&q=cpns&date=today 12-m', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    },
+    {
+        id: 'chart-cpns-pppk-12m',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [
+            { keyword: 'pppk', geo: 'ID', time: 'today 12-m' },
+            { keyword: 'cpns', geo: 'ID', time: 'today 12-m' }
+        ] },
+        params: { exploreQuery: 'geo=ID&q=pppk,cpns&date=today 12-m,today 12-m', guestPath: 'https://trends.google.com:443/trends/embed/' }
+    },
+    {
+        id: 'chart-utbk-5y',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'utbk', geo: 'ID', time: 'today 5-y' }] },
+        params: { exploreQuery: 'date=today%205-y&geo=ID&q=utbk', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    },
+    {
+        id: 'chart-utbk-12m',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'utbk', geo: 'ID', time: 'today 12-m' }] },
+        params: { exploreQuery: 'geo=ID&q=utbk&date=today 12-m', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    },
+    {
+        id: 'chart-polri-5y',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'bintara polri', geo: 'ID', time: 'today 5-y' }] },
+        params: { exploreQuery: 'date=today%205-y&geo=ID&q=bintara%20polri', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    },
+    {
+        id: 'chart-polri-12m',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'bintara polri', geo: 'ID', time: 'today 12-m' }] },
+        params: { exploreQuery: 'geo=ID&q=bintara%20polri&date=today 12-m', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    },
+    {
+        id: 'chart-lampung-5y',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'kamus bahasa lampung', geo: 'ID', time: 'today 5-y' }] },
+        params: { exploreQuery: 'date=today%205-y&geo=ID&q=kamus%20bahasa%20lampung', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    },
+    {
+        id: 'chart-lampung-12m',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'kamus bahasa lampung', geo: 'ID', time: 'today 12-m' }] },
+        params: { exploreQuery: 'geo=ID&q=kamus%20bahasa%20lampung&date=today 12-m', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    },
+    {
+        id: 'chart-wallpaper-5y',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'wallpaper islami', geo: 'ID', time: 'today 5-y' }] },
+        params: { exploreQuery: 'date=today%205-y&geo=ID&q=wallpaper%20islami', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    },
+    {
+        id: 'chart-wallpaper-12m',
+        type: 'TIMESERIES',
+        request: { comparisonItem: [{ keyword: 'wallpaper islami', geo: 'ID', time: 'today 12-m' }] },
+        params: { exploreQuery: 'geo=ID&q=wallpaper%20islami&date=today 12-m', guestPath: 'https://trends.google.co.id:443/trends/embed/' }
+    }
+];
+
+function createEmbedScript(request, params) {
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.textContent = `trends.embed.renderExploreWidget("TIMESERIES", ${JSON.stringify(request)}, ${JSON.stringify(params)});`;
+    return script;
+}
+
+function renderTrends() {
+    if (!window.trends || !window.trends.embed) {
+        console.warn('Google Trends embed loader belum tersedia.');
+        return;
+    }
+    chartConfigs.forEach(({ id, request, params }) => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.innerHTML = '';
+        container.appendChild(createEmbedScript(request, params));
+    });
+}
+
+function setupRefresh() {
+    const button = document.getElementById('refreshButton');
+    if (!button) return;
+    button.addEventListener('click', () => {
+        renderTrends();
+    });
+}
+
+window.addEventListener('load', () => {
+    setupRefresh();
+    if (window.trends && window.trends.embed) {
+        renderTrends();
+    } else {
+        const observer = new MutationObserver(() => {
+            if (window.trends && window.trends.embed) {
+                observer.disconnect();
+                renderTrends();
+            }
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+});
+</script>
+</body>
+</html>
