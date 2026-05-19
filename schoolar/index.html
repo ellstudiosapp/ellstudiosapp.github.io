@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Scholar Dashboard</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      background: #0f172a;
+      color: white;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #cbd5e1;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .controls input {
+      flex: 1;
+      min-width: 220px;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      background: #1e293b;
+      color: white;
+    }
+
+    .controls button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .controls button:hover {
+      background: #1d4ed8;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .card h3 {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+    }
+
+    .card .value {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      vertical-align: top;
+    }
+
+    th {
+      background: #0f172a;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:hover {
+      background: rgba(255,255,255,0.04);
+    }
+
+    a {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #cbd5e1;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(37,99,235,0.2);
+      color: #93c5fd;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 25px;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    @media(max-width: 768px) {
+      .header h1 {
+        font-size: 24px;
+      }
+
+      th, td {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h1>📚 Google Scholar Dashboard</h1>
+    <p>Dashboard publikasi dosen berbasis HTML + JavaScript</p>
+  </div>
+
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Cari judul publikasi...">
+    <button onclick="loadData()">Refresh Data</button>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <h3>Total Publikasi</h3>
+      <div class="value" id="totalPublications">0</div>
+    </div>
+
+    <div class="card">
+      <h3>Total Sitasi</h3>
+      <div class="value" id="totalCitations">0</div>
+    </div>
+
+    <div class="card">
+      <h3>Total Dosen</h3>
+      <div class="value" id="totalAuthors">0</div>
+    </div>
+
+    <div class="card">
+      <h3>Tahun Terbaru</h3>
+      <div class="value" id="latestYear">-</div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Dosen</th>
+          <th>Judul</th>
+          <th>Penulis</th>
+          <th>Publikasi</th>
+          <th>Sitasi</th>
+          <th>Tahun</th>
+        </tr>
+      </thead>
+      <tbody id="publicationTable">
+        <tr>
+          <td colspan="7" class="loading">Loading data...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    Dibuat dengan HTML + Vanilla JavaScript • Support GitHub Pages
+  </div>
+
+</div>
+
+<script>
+
+/*
+  ========================================================
+  KONFIGURASI DOSEN
+  ========================================================
+*/
+
+const dosenList = [
+  {
+    name: 'MUHAMMAD FAUZAN AZIMA',
+    scholarId: 'luSmsaIAAAAJ'
+  },
+  {
+    name: 'SITI NUR LAILA',
+    scholarId: 'C74trMkAAAAJ'
+  }
+];
+
+/*
+  ========================================================
+  ENDPOINT
+  ========================================================
+
+  Karena GitHub Pages tidak bisa menjalankan PHP,
+  kita memanfaatkan endpoint PHP yang sudah ada.
+
+  Jika endpoint anda mendukung CORS:
+  gunakan langsung.
+
+  Jika CORS bermasalah:
+  gunakan proxy corsproxy.io
+*/
+
+/*
+  ========================================================
+  GOOGLE SCHOLAR SCRAPER VERSION JAVASCRIPT
+  ========================================================
+
+  Adaptasi dari file googlescholar.php
+  yang sebelumnya menggunakan:
+  - PHP
+  - simple_html_dom
+
+  Kini diubah menjadi:
+  - Fetch HTML
+  - DOMParser JavaScript
+  - Pure Client Side
+
+*/
+
+const USE_PROXY = true;
+
+function buildScholarUrl(scholarId) {
+
+  const scholarUrl = `https://scholar.google.com/citations?user=${scholarId}&view_op=list_works&sortby=pubdate`;
+
+  if (USE_PROXY) {
+    return 'https://corsproxy.io/?' + encodeURIComponent(scholarUrl);
+  }
+
+  return scholarUrl;
+}
+
+async function fetchGoogleScholar(scholarId) {
+
+  try {
+
+    const response = await fetch(buildScholarUrl(scholarId));
+    const htmlText = await response.text();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    /*
+      ====================================================
+      TOTAL CITATIONS
+      ====================================================
+    */
+
+    let totalCitations = 0;
+
+    const citationElement = doc.querySelector('#gsc_rsb_st td.gsc_rsb_std');
+
+    if (citationElement) {
+      totalCitations = parseInt(citationElement.textContent.trim()) || 0;
+    }
+
+    /*
+      ====================================================
+      CITATIONS PER YEAR
+      ====================================================
+    */
+
+    const citationsPerYear = {};
+
+    const years = doc.querySelectorAll('.gsc_g_t');
+    const scores = doc.querySelectorAll('.gsc_g_al');
+
+    years.forEach((yearEl, index) => {
+
+      const year = yearEl.textContent.trim();
+      const score = scores[index]?.textContent.trim() || 0;
+
+      citationsPerYear[year] = Number(score);
+    });
+
+    /*
+      ====================================================
+      PUBLICATIONS
+      ====================================================
+    */
+
+    const publications = [];
+
+    const rows = doc.querySelectorAll('#gsc_a_t .gsc_a_tr');
+
+    rows.forEach(row => {
+
+      const titleEl = row.querySelector('.gsc_a_at');
+      const grayEls = row.querySelectorAll('.gs_gray');
+      const citationEl = row.querySelector('.gsc_a_ac');
+      const yearEl = row.querySelector('.gsc_a_h');
+
+      const publication = {
+        title: titleEl?.textContent.trim() || '-',
+        authors: grayEls[0]?.textContent.trim() || '-',
+        venue: grayEls[1]?.textContent.trim() || '-',
+        link: titleEl ? 'https://scholar.google.com' + titleEl.getAttribute('href') : '#',
+        citations: Number(citationEl?.textContent.trim()) || 0,
+        year: Number(yearEl?.textContent.trim()) || 0
+      };
+
+      publications.push(publication);
+    });
+
+    return {
+      total_citations: totalCitations,
+      citations_per_year: citationsPerYear,
+      publications: publications
+    };
+
+  } catch (error) {
+
+    console.error('Google Scholar Error:', error);
+
+    return {
+      total_citations: 0,
+      citations_per_year: {},
+      publications: []
+    };
+  }
+}
+
+let allPublications = [];
+
+async function loadData() {
+
+  const table = document.getElementById('publicationTable');
+  table.innerHTML = `
+    <tr>
+      <td colspan="7" class="loading">Mengambil data Google Scholar...</td>
+    </tr>
+  `;
+
+  allPublications = [];
+
+  let totalCitations = 0;
+
+  try {
+
+    for (const dosen of dosenList) {
+
+      const data = await fetchGoogleScholar(dosen.scholarId);
+
+      totalCitations += Number(data.total_citations || 0);
+
+      const publications = data.publications || [];
+
+      publications.forEach(pub => {
+        allPublications.push({
+          author: dosen.name,
+          title: pub.title || '-',
+          authors: pub.authors || '-',
+          venue: pub.venue || '-',
+          citations: pub.citations || 0,
+          year: pub.year || '-',
+          link: pub.link || '#'
+        });
+      });
+    }
+
+    renderTable(allPublications);
+
+    document.getElementById('totalPublications').innerText = allPublications.length;
+    document.getElementById('totalCitations').innerText = totalCitations;
+    document.getElementById('totalAuthors').innerText = dosenList.length;
+
+    const latest = Math.max(...allPublications.map(x => Number(x.year || 0)));
+    document.getElementById('latestYear').innerText = latest || '-';
+
+  } catch (error) {
+
+    console.error(error);
+
+    table.innerHTML = `
+      <tr>
+        <td colspan="7" class="loading">
+          Gagal mengambil data.<br><br>
+          Kemungkinan:
+          <br>• Endpoint tidak mendukung CORS
+          <br>• Google Scholar memblokir request
+          <br>• Server sedang offline
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function renderTable(data) {
+
+  const table = document.getElementById('publicationTable');
+
+  if (!data.length) {
+    table.innerHTML = `
+      <tr>
+        <td colspan="7" class="loading">Tidak ada data ditemukan</td>
+      </tr>
+    `;
+    return;
+  }
+
+  table.innerHTML = '';
+
+  data.sort((a, b) => Number(b.year) - Number(a.year));
+
+  data.forEach((item, index) => {
+
+    table.innerHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>
+          <div><strong>${item.author}</strong></div>
+        </td>
+        <td>
+          <a href="${item.link}" target="_blank">
+            ${item.title}
+          </a>
+        </td>
+        <td>${item.authors}</td>
+        <td>
+          <span class="badge">${item.venue}</span>
+        </td>
+        <td>${item.citations}</td>
+        <td>${item.year}</td>
+      </tr>
+    `;
+  });
+}
+
+/*
+  ========================================================
+  SEARCH FILTER
+  ========================================================
+*/
+
+const searchInput = document.getElementById('searchInput');
+
+searchInput.addEventListener('input', function() {
+
+  const keyword = this.value.toLowerCase();
+
+  const filtered = allPublications.filter(item => {
+
+    return (
+      item.title.toLowerCase().includes(keyword) ||
+      item.author.toLowerCase().includes(keyword) ||
+      item.authors.toLowerCase().includes(keyword) ||
+      item.venue.toLowerCase().includes(keyword)
+    );
+  });
+
+  renderTable(filtered);
+});
+
+/*
+  ========================================================
+  START APP
+  ========================================================
+*/
+
+loadData();
+
+</script>
+
+</body>
+</html>
