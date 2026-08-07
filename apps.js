@@ -33,18 +33,6 @@ const appsData = {
       image_url: "https://play-lh.googleusercontent.com/ddAnFlarIsYVu_yAnEsPPQR2ZTNBM4h8jlz8OegwXpCihGym_fevTBMNq1VEwNisYbQiAQMAchxHpW2tmydr=s256"
     },
     {
-      id: 6,
-      app_name: "Belajar Bahasa Inggris Pemula",
-      play_store_url: "https://play.google.com/store/apps/details?id=com.ellstudiosapp.bahasainggrispemulapanduan",
-      image_url: "https://play-lh.googleusercontent.com/LDRTJUDtP9QGYfoCEShenEh9C1de7pQbUDWZ0nywfKN68sRH3TF_BKwJynztbyMDkNy6TAwVFJVHh6Fb82VD=s256"
-    },
-    {
-      id: 7,
-      app_name: "Fluent English",
-      play_store_url: "https://play.google.com/store/apps/details?id=com.ellstudiosapp.fluent_english",
-      image_url: "https://play-lh.googleusercontent.com/4iTZvuOhP7PbYD2ur9zyJYThCzOmOF-AowqXh9rlCl8oS3ik4Bg73eBt85_QQQfUgjr8rdKNnpVA6LA9m9yIpw=s256"
-    },
-    {
       id: 8,
       app_name: "Kamus Bahasa Indonesia (KBBI)",
       play_store_url: "https://play.google.com/store/apps/details?id=com.ellstudiosapp.kbbi.kamusbesarbahasaindonesia",
