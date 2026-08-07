@@ -49,6 +49,12 @@ const appsData = {
       app_name: "Tabel Perkalian Matematika",
       play_store_url: "https://play.google.com/store/apps/details?id=com.ellstudiosapp.multiplicationtable",
       image_url: "https://play-lh.googleusercontent.com/XF2OQD50wxIpnWxIh2nIpqQLycJ0DVt0L2kVLiryEYEZqehJTpR_EgiHp761LyVtrlYG=s256"
+    },
+    {
+      id: 10,
+      app_name: "Asmaul Husna 99 Nama Allah",
+      play_store_url: "https://play.google.com/store/apps/details?id=com.ellstudiosapp.asmaulhusna",
+      image_url: "https://play-lh.googleusercontent.com/GEfTJMLJWSuUNnEQ7t-BAV7AiW2QXRDJWRsDhLCRFwVCpMisOd-KZ3pyDZTmPP7hT5L_3rdS7X6os4NVt63osQ=s256"
     }
   ]
 };
