@@ -1,0 +1,2622 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azima Visualizer - Professional Studio</title>
+    <!-- WebM Muxer library for deterministic offline video+audio muxing -->
+    <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.1.3/build/webm-muxer.js"></script>
+    <style>
+        :root {
+            --bg-darkest: #07080c;
+            --bg-panel: #0f1117;
+            --bg-panel-header: #151821;
+            --bg-input: #1b1e29;
+            --border-color: #232736;
+            --accent-primary: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --accent-hover: #4f46e5;
+            --accent-cyan: #06b6d4;
+            --accent-gold: #f59e0b;
+            --text-main: #f3f4f6;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --timeline-bg: #0a0b10;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-darkest);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Header */
+        header {
+            height: 46px;
+            background-color: var(--bg-panel-header);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 30;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-brand {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .app-title {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            color: var(--text-main);
+        }
+
+        /* Metronome Status Badge on Top Header */
+        .metronome-hud {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: var(--bg-darkest);
+            border: 1px solid var(--border-color);
+            padding: 4px 12px;
+            border-radius: 6px;
+        }
+
+        .bpm-display {
+            font-family: monospace;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--accent-cyan);
+            letter-spacing: 0.5px;
+        }
+
+        .beat-dots {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .beat-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            transition: all 0.08s ease-out;
+        }
+
+        .beat-dot.active {
+            background-color: var(--accent-primary);
+            box-shadow: 0 0 8px var(--accent-primary);
+            transform: scale(1.3);
+        }
+
+        .beat-dot.downbeat {
+            border-color: var(--accent-gold);
+        }
+
+        .beat-dot.downbeat.active {
+            background-color: var(--accent-gold);
+            box-shadow: 0 0 10px var(--accent-gold);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Workspace 3-column Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 280px 1fr 340px;
+            flex: 1;
+            height: calc(100vh - 176px);
+            background-color: var(--bg-darkest);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .panel {
+            background-color: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-left { border-right: 1px solid var(--border-color); }
+        .panel-right { border-left: 1px solid var(--border-color); }
+
+        .panel-header {
+            padding: 10px 14px;
+            background-color: var(--bg-panel-header);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 14px;
+        }
+
+        /* Layer Item List */
+        .layer-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 10px;
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            transition: all 0.15s ease;
+        }
+
+        .layer-item:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            background-color: rgba(255, 255, 255, 0.04);
+        }
+
+        .layer-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+        }
+
+        /* Toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 32px;
+            height: 18px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            transition: .2s;
+            border-radius: 18px;
+        }
+
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 2px;
+            bottom: 2px;
+            background-color: var(--text-muted);
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked + .switch-slider {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        input:checked + .switch-slider:before {
+            transform: translateX(14px);
+            background-color: #fff;
+        }
+
+        /* Viewport Canvas Center */
+        .viewport-wrapper {
+            position: relative;
+            background: radial-gradient(circle at center, #10131d 0%, #050609 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .canvas-frame {
+            position: relative;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: #000;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+        }
+
+        canvas#viewportCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .viewport-bottom-bar {
+            position: absolute;
+            bottom: 14px;
+            display: flex;
+            gap: 8px;
+            background: rgba(16, 18, 24, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .res-pill {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .res-pill.active, .res-pill:hover {
+            color: #fff;
+            background-color: rgba(99, 102, 241, 0.3);
+        }
+
+        /* Presets Grid */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .preset-chip {
+            background: var(--bg-panel-header);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .preset-chip:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+            background-color: rgba(99, 102, 241, 0.08);
+        }
+
+        .preset-chip.active {
+            border-color: var(--accent-primary);
+            background-color: rgba(99, 102, 241, 0.18);
+        }
+
+        .preset-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .preset-desc {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* Controls & Form Elements */
+        .ctrl-group {
+            margin-bottom: 12px;
+        }
+
+        .ctrl-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .ctrl-val {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            background: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 7px 9px;
+            border-radius: 5px;
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--accent-primary);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            appearance: none;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            box-shadow: 0 0 6px var(--accent-glow);
+        }
+
+        .btn {
+            background-color: var(--bg-panel-header);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover { background-color: var(--border-color); }
+
+        .btn-primary {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: #fff;
+        }
+
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-full { width: 100%; }
+
+        /* Timeline Dock */
+        .timeline-area {
+            height: 130px;
+            background-color: var(--timeline-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+        }
+
+        .transport-row {
+            height: 44px;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .transport-left, .transport-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-box {
+            font-family: monospace;
+            font-size: 12px;
+            background-color: var(--bg-input);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+        }
+
+        .waveform-view {
+            flex: 1;
+            padding: 8px 16px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .waveform-hull {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas#waveCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .playhead-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #fff;
+            box-shadow: 0 0 8px #fff;
+            pointer-events: none;
+            transform: translateX(-50%);
+            left: 0%;
+        }
+
+        /* Modal Dialog for Offline Background Render */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 6, 9, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal-backdrop.active { display: flex; }
+
+        .export-dialog {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 530px;
+            max-width: 94vw;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dialog-header {
+            padding: 14px 20px;
+            background-color: var(--bg-panel-header);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dialog-body { padding: 20px; }
+
+        .render-preview-box {
+            width: 100%;
+            height: 180px;
+            background-color: #000;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas#exportPreviewCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background-color: var(--bg-input);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #6366f1, #06b6d4);
+            border-radius: 4px;
+            transition: width 0.1s linear;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background-color: var(--bg-panel-header);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .stat-item .stat-title {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .stat-item .stat-val {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 2px;
+            font-family: monospace;
+        }
+
+        .dialog-footer {
+            padding: 12px 20px;
+            background-color: var(--bg-panel-header);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .hidden-input { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Top Header -->
+    <header>
+        <div class="logo-area">
+            <span class="badge-brand">AZIMA</span>
+            <span class="app-title">Azima Visualizer Studio Pro</span>
+        </div>
+
+        <!-- Real-time Metronome HUD -->
+        <div class="metronome-hud">
+            <span style="font-size: 10px; color: var(--text-dim); font-weight: 700;">TEMPO:</span>
+            <span class="bpm-display" id="hudBpm">126.0 BPM</span>
+            <div class="beat-dots">
+                <div class="beat-dot downbeat" id="dot-0"></div>
+                <div class="beat-dot" id="dot-1"></div>
+                <div class="beat-dot" id="dot-2"></div>
+                <div class="beat-dot" id="dot-3"></div>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn btn-primary" id="btnOpenExportModal">🎥 Export Video (Background)</button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+
+        <!-- Left Column: Layers, Info Teks & Media -->
+        <aside class="panel panel-left">
+            <div class="panel-header">
+                <span>Composition Layers</span>
+            </div>
+            <div class="panel-body">
+                <div class="layer-item">
+                    <span class="layer-left">⚡ Beat Camera Shake</span>
+                    <label class="switch"><input type="checkbox" id="layerShake" checked><span class="switch-slider"></span></label>
+                </div>
+                <div class="layer-item">
+                    <span class="layer-left">🔍 Background Punch Zoom</span>
+                    <label class="switch"><input type="checkbox" id="layerBgZoom" checked><span class="switch-slider"></span></label>
+                </div>
+                <div class="layer-item">
+                    <span class="layer-left">🌊 Beat Shockwave Rings</span>
+                    <label class="switch"><input type="checkbox" id="layerShockwaves" checked><span class="switch-slider"></span></label>
+                </div>
+                <div class="layer-item">
+                    <span class="layer-left">✨ Additive Bloom Glow</span>
+                    <label class="switch"><input type="checkbox" id="layerGlow" checked><span class="switch-slider"></span></label>
+                </div>
+                <div class="layer-item">
+                    <span class="layer-left">📊 Audio Spectrum</span>
+                    <label class="switch"><input type="checkbox" id="layerSpectrum" checked><span class="switch-slider"></span></label>
+                </div>
+                <div class="layer-item">
+                    <span class="layer-left">❄️ 3D White Starfield</span>
+                    <label class="switch"><input type="checkbox" id="layerParticles" checked><span class="switch-slider"></span></label>
+                </div>
+                <div class="layer-item">
+                    <span class="layer-left">🔘 Center Logo & Disc</span>
+                    <label class="switch"><input type="checkbox" id="layerLogo" checked><span class="switch-slider"></span></label>
+                </div>
+                <div class="layer-item">
+                    <span class="layer-left">🏷️ Channel & Track Overlay</span>
+                    <label class="switch"><input type="checkbox" id="layerOverlayText" checked><span class="switch-slider"></span></label>
+                </div>
+                <div class="layer-item">
+                    <span class="layer-left">🖼️ Background Image</span>
+                    <label class="switch"><input type="checkbox" id="layerBg" checked><span class="switch-slider"></span></label>
+                </div>
+
+                <!-- Channel & Track Title Settings -->
+                <div class="panel-header" style="margin: 18px -14px 12px -14px;">Video Text Branding</div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Nama Channel</span>
+                    </div>
+                    <input type="text" id="inputChannelName" value="AZIMA MUSIC" placeholder="Contoh: AZIMA MUSIC">
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Judul Lagu</span>
+                    </div>
+                    <input type="text" id="inputTrackTitle" value="Electro Bass Drop" placeholder="Contoh: Judul Lagu - Artist">
+                </div>
+
+                <!-- Media Customization -->
+                <div class="panel-header" style="margin: 18px -14px 12px -14px;">Media Customization</div>
+                <div class="ctrl-group">
+                    <button class="btn btn-full" id="btnSelectLogo">🖼️ Upload Center Logo</button>
+                    <input type="file" id="logoInput" class="hidden-input" accept="image/*">
+                </div>
+                <div class="ctrl-group">
+                    <button class="btn btn-full" id="btnSelectBg">🌄 Upload Background</button>
+                    <input type="file" id="bgInput" class="hidden-input" accept="image/*">
+                </div>
+                <div class="ctrl-group">
+                    <button class="btn btn-full" id="btnResetImages" style="color: var(--text-dim);">✖ Remove Custom Images</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center Column: Viewport Canvas -->
+        <main class="viewport-wrapper">
+            <div class="canvas-frame">
+                <canvas id="viewportCanvas" width="1280" height="720"></canvas>
+            </div>
+            <div class="viewport-bottom-bar">
+                <button class="res-pill" data-res="720">720p HD</button>
+                <button class="res-pill active" data-res="1080">1080p FHD</button>
+                <span style="border-left: 1px solid var(--border-color); margin: 0 4px;"></span>
+                <span id="fpsReadout" style="font-size: 11px; color: var(--success); font-family: monospace;">60 FPS</span>
+            </div>
+        </main>
+
+        <!-- Right Column: Dynamics, Background Settings & Presets -->
+        <aside class="panel panel-right">
+            <div class="panel-header">
+                <span>Presets & Control Center</span>
+            </div>
+            <div class="panel-body">
+                <div class="preset-grid">
+                    <div class="preset-chip active" data-preset="trap">
+                        <div class="preset-name">Trap Nation</div>
+                        <div class="preset-desc">Punch Zoom & Shockwave</div>
+                    </div>
+                    <div class="preset-chip" data-preset="linear">
+                        <div class="preset-name">Dual EQ Bars</div>
+                        <div class="preset-desc">Linear Peak Falloff</div>
+                    </div>
+                    <div class="preset-chip" data-preset="oscilloscope">
+                        <div class="preset-name">Oscilloscope</div>
+                        <div class="preset-desc">Circular Pulse Wave</div>
+                    </div>
+                    <div class="preset-chip" data-preset="ribbon">
+                        <div class="preset-name">Neon Ribbon</div>
+                        <div class="preset-desc">Bezier Wave Flow</div>
+                    </div>
+                </div>
+
+                <!-- Advanced Background Model & Panning Settings -->
+                <div class="panel-header" style="margin: 8px -14px 12px -14px; font-size: 10px;">Pengaturan Gambar Background</div>
+                
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Mode Tampilan Background</span>
+                    </div>
+                    <select id="selectBgMode">
+                        <option value="cover" selected>Normal (Cover & Center)</option>
+                        <option value="mirror-h">Mirror Horizontal (Simetris Kiri-Kanan)</option>
+                        <option value="mirror-quad">Mirror Quad (4-Way Kaleidoskop)</option>
+                        <option value="tile">Tile / Repeat</option>
+                    </select>
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Background Pan X (Geser Horizontal)</span>
+                        <span class="ctrl-val" id="valBgPanX">0%</span>
+                    </div>
+                    <input type="range" id="paramBgPanX" min="-100" max="100" step="1" value="0">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Background Pan Y (Geser Vertikal)</span>
+                        <span class="ctrl-val" id="valBgPanY">0%</span>
+                    </div>
+                    <input type="range" id="paramBgPanY" min="-100" max="100" step="1" value="0">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Background Base Zoom / Scale</span>
+                        <span class="ctrl-val" id="valBgScale">1.05x</span>
+                    </div>
+                    <input type="range" id="paramBgScale" min="1.00" max="3.00" step="0.05" value="1.05">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Background Dim / Darkness</span>
+                        <span class="ctrl-val" id="valBgDim">0.45</span>
+                    </div>
+                    <input type="range" id="paramBgDim" min="0.00" max="0.90" step="0.05" value="0.45">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Background Blur</span>
+                        <span class="ctrl-val" id="valBgBlur">0 px</span>
+                    </div>
+                    <input type="range" id="paramBgBlur" min="0" max="25" step="1" value="0">
+                </div>
+
+                <!-- Zoom In / Zoom Out Punch Controls -->
+                <div class="panel-header" style="margin: 14px -14px 12px -14px; font-size: 10px;">Punch Zoom Dynamics (Logo & Background)</div>
+                
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Background Zoom Punch Intensity</span>
+                        <span class="ctrl-val" id="valBgZoomIntensity">0.08</span>
+                    </div>
+                    <input type="range" id="paramBgZoomIntensity" min="0.00" max="0.25" step="0.01" value="0.08">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Logo Punch Scale (Expansion)</span>
+                        <span class="ctrl-val" id="valLogoPunch">1.35x</span>
+                    </div>
+                    <input type="range" id="paramLogoPunch" min="0.4" max="2.5" step="0.05" value="1.35">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Spring Elasticity (Stiffness)</span>
+                        <span class="ctrl-val" id="valSpringStiffness">240</span>
+                    </div>
+                    <input type="range" id="paramSpringStiffness" min="100" max="450" step="10" value="240">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Spring Damping (Smooth Decay)</span>
+                        <span class="ctrl-val" id="valSpringDamping">16</span>
+                    </div>
+                    <input type="range" id="paramSpringDamping" min="8" max="32" step="1" value="16">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Spectrum Punch Multiplier</span>
+                        <span class="ctrl-val" id="valSpectrumPunch">1.40x</span>
+                    </div>
+                    <input type="range" id="paramSpectrumPunch" min="1.0" max="2.4" step="0.05" value="1.40">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Track Tempo (BPM)</span>
+                        <span class="ctrl-val" id="valTrackBpm">126.0</span>
+                    </div>
+                    <input type="range" id="paramBpm" min="60" max="180" step="0.5" value="126.0">
+                </div>
+
+                <!-- Visual Properties -->
+                <div class="panel-header" style="margin: 14px -14px 12px -14px; font-size: 10px;">Visual Properties</div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>White 3D Particle Opacity</span>
+                        <span class="ctrl-val" id="valParticleAlpha">0.50</span>
+                    </div>
+                    <input type="range" id="paramParticleAlpha" min="0.05" max="1.0" step="0.01" value="0.50">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Particle Density</span>
+                        <span class="ctrl-val" id="valParticleCount">130</span>
+                    </div>
+                    <input type="range" id="paramParticleCount" min="0" max="250" value="130">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Center Ring Base Radius</span>
+                        <span class="ctrl-val" id="valRadius">160</span>
+                    </div>
+                    <input type="range" id="paramRadius" min="70" max="280" value="160">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Bass Camera Shake</span>
+                        <span class="ctrl-val" id="valShake">22</span>
+                    </div>
+                    <input type="range" id="paramShake" min="0" max="60" value="22">
+                </div>
+
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row">
+                        <span>Spectrum Bar Base Amplitude</span>
+                        <span class="ctrl-val" id="valAmp">120</span>
+                    </div>
+                    <input type="range" id="paramAmp" min="40" max="260" value="120">
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Timeline Dock -->
+    <footer class="timeline-area">
+        <div class="transport-row">
+            <div class="transport-left">
+                <button class="btn btn-primary" id="btnPlayPause">▶ Play</button>
+                <button class="btn" id="btnChooseAudio">📁 Choose Audio</button>
+                <input type="file" id="audioFileInput" class="hidden-input" accept="audio/*">
+                <button class="btn" id="btnGenerateEDM">⚡ Generate Synth Beat</button>
+                <span class="time-box" id="timeDisplay">00:00 / 00:00</span>
+            </div>
+            <div class="transport-right">
+                <span style="font-size: 11px; color: var(--text-muted);">Volume</span>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.85" style="width: 75px;">
+                <label class="switch" style="margin-left: 8px;"><input type="checkbox" id="loopToggle" checked><span class="switch-slider"></span></label>
+                <span style="font-size: 11px; color: var(--text-muted);">Loop</span>
+            </div>
+        </div>
+
+        <div class="waveform-view" id="waveformScrubber">
+            <div class="waveform-hull">
+                <canvas id="waveCanvas"></canvas>
+                <div class="playhead-line" id="playhead"></div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Background Video Export Modal -->
+    <div class="modal-backdrop" id="exportModal">
+        <div class="export-dialog">
+            <div class="dialog-header">
+                <h3><span>🎞️</span> Background Video Renderer</h3>
+                <span style="font-size: 11px; color: var(--accent-cyan); font-weight: 600;">DETERMINISTIC ZOOM PUNCH</span>
+            </div>
+            
+            <div class="dialog-body">
+                <div class="render-preview-box">
+                    <canvas id="exportPreviewCanvas" width="480" height="270"></canvas>
+                </div>
+
+                <div class="progress-meta">
+                    <span id="renderStatusText">Ready to start rendering...</span>
+                    <span class="ctrl-val" id="renderPercentText">0.0%</span>
+                </div>
+
+                <div class="progress-track">
+                    <div class="progress-fill" id="renderProgressFill"></div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-title">Frames</div>
+                        <div class="stat-val" id="statFrames">0 / 0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-title">Elapsed Time</div>
+                        <div class="stat-val" id="statElapsed">00:00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-title">Estimated ETA</div>
+                        <div class="stat-val" id="statEta">--:--</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div>
+                        <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Resolution</label>
+                        <select id="exportResolution" style="width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-color); padding: 6px; border-radius: 4px; font-size: 12px;">
+                            <option value="720">1280x720 (720p HD)</option>
+                            <option value="1080" selected>1920x1080 (1080p FHD)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Thermal Process Profile</label>
+                        <select id="exportThermalProfile" style="width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-color); padding: 6px; border-radius: 4px; font-size: 12px;">
+                            <option value="eco" selected>❄️ Dingin Maksimal (Eco / Silent Fan)</option>
+                            <option value="balanced">⚖️ Seimbang (Balanced)</option>
+                            <option value="turbo">⚡ Cepat (Turbo)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dialog-footer">
+                <button class="btn" id="btnCancelRender">Close</button>
+                <button class="btn btn-primary" id="btnStartExport">🚀 Start Background Render</button>
+                <a class="btn btn-primary" id="btnDownloadBackup" style="display: none;" download="azima-visualizer-export.webm">⬇️ Download Video</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Offscreen Canvas for Video Export -->
+    <canvas id="offscreenExportCanvas" width="1920" height="1080" style="display: none;"></canvas>
+
+    <script>
+        const state = {
+            preset: 'trap',
+            particleAlpha: 0.50,
+            particleCount: 130,
+            innerRadius: 160,
+            bassShake: 22,
+            barAmp: 120,
+            barCount: 96,
+            bgZoomIntensity: 0.08,
+            logoPunch: 1.35,
+            springStiffness: 240,
+            springDamping: 16,
+            spectrumPunch: 1.40,
+            channelName: "AZIMA MUSIC",
+            trackTitle: "Electro Bass Drop",
+            bgMode: "cover",       // 'cover', 'mirror-h', 'mirror-quad', 'tile'
+            bgPanX: 0,            // -100 to 100 %
+            bgPanY: 0,            // -100 to 100 %
+            bgScale: 1.05,        // 1.0 to 3.0
+            bgDim: 0.45,          // 0.0 to 0.9
+            bgBlur: 0,            // 0 to 25 px
+            layers: {
+                shake: true,
+                bgZoom: true,
+                shockwaves: true,
+                glow: true,
+                spectrum: true,
+                particles: true,
+                logo: true,
+                overlayText: true,
+                bg: true
+            },
+            isPlaying: false,
+            currentTime: 0,
+            duration: 0,
+            isRenderingOffline: false,
+            cancelRenderRequested: false
+        };
+
+        // Live Canvases
+        const viewportCanvas = document.getElementById('viewportCanvas');
+        const vCtx = viewportCanvas.getContext('2d', { alpha: false });
+
+        const waveCanvas = document.getElementById('waveCanvas');
+        const waveCtx = waveCanvas.getContext('2d');
+        const playhead = document.getElementById('playhead');
+
+        // Offscreen & Export Canvases
+        const offscreenExportCanvas = document.getElementById('offscreenExportCanvas');
+        const exportCtx = offscreenExportCanvas.getContext('2d', { alpha: false });
+        const exportPreviewCanvas = document.getElementById('exportPreviewCanvas');
+        const previewCtx = exportPreviewCanvas.getContext('2d');
+
+        // Audio Infrastructure
+        let audioCtx = null;
+        let audioElement = new Audio();
+        audioElement.crossOrigin = "anonymous";
+        let sourceNode = null;
+        let analyserNode = null;
+        let gainNode = null;
+        let decodedAudioBuffer = null;
+
+        const FFT_SIZE = 512;
+        let liveFreqData = new Uint8Array(FFT_SIZE / 2);
+        let liveTimeData = new Uint8Array(FFT_SIZE / 2);
+        let smoothedFreq = new Float32Array(FFT_SIZE / 2);
+        let linearPeakCaps = new Float32Array(180);
+
+        let logoImage = null;
+        let bgImage = null;
+
+        class DampedSpringOscillator {
+            constructor(target = 0) {
+                this.value = target;
+                this.velocity = 0;
+                this.target = target;
+            }
+
+            reset(target = 0) {
+                this.value = target;
+                this.velocity = 0;
+                this.target = target;
+            }
+
+            impulse(force) {
+                this.velocity += force;
+            }
+
+            update(dt = 0.016, stiffness = 240, damping = 16) {
+                const displacement = this.value - this.target;
+                const springForce = -stiffness * displacement;
+                const dampingForce = -damping * this.velocity;
+                const acceleration = springForce + dampingForce;
+
+                this.velocity += acceleration * dt;
+                this.value += this.velocity * dt;
+
+                if (Math.abs(this.value - this.target) < 0.0002 && Math.abs(this.velocity) < 0.0002) {
+                    this.value = this.target;
+                    this.velocity = 0;
+                }
+            }
+        }
+
+        const logoSpring = new DampedSpringOscillator(0);
+        const bgZoomSpring = new DampedSpringOscillator(1.0);
+
+        class ShockwaveSystem {
+            constructor() {
+                this.waves = [];
+            }
+
+            reset() {
+                this.waves = [];
+            }
+
+            emit(cx, cy, baseRadius, velocity, hue) {
+                if (velocity < 0.35) return;
+                this.waves.push({
+                    x: cx,
+                    y: cy,
+                    radius: baseRadius,
+                    maxRadius: baseRadius + 150 + velocity * 200,
+                    alpha: Math.min(1.0, 0.45 + velocity * 0.55),
+                    speed: 6.5 + velocity * 13.0,
+                    width: 3.5 + velocity * 5.0,
+                    color: `hsl(${hue}, 100%, 70%)`
+                });
+            }
+
+            updateAndRender(ctx) {
+                if (!state.layers.shockwaves || this.waves.length === 0) return;
+
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+
+                for (let i = this.waves.length - 1; i >= 0; i--) {
+                    const w = this.waves[i];
+                    w.radius += w.speed;
+                    const progress = (w.radius - state.innerRadius) / (w.maxRadius - state.innerRadius);
+                    const currentAlpha = Math.max(0, w.alpha * (1 - progress));
+
+                    if (currentAlpha <= 0.01 || w.radius >= w.maxRadius) {
+                        this.waves.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.strokeStyle = w.color;
+                    ctx.globalAlpha = currentAlpha;
+                    ctx.lineWidth = w.width * (1 - progress * 0.5);
+
+                    ctx.beginPath();
+                    ctx.arc(w.x, w.y, w.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+        }
+        const shockwaves = new ShockwaveSystem();
+
+        class MetronomeTracker {
+            constructor() {
+                this.bpm = 126.0;
+                this.beatInterval = 60 / 126.0;
+                this.firstBeatOffset = 0.0;
+                this.lastBeatTime = -999;
+                this.currentBeatIndex = 0;
+                this.envelopeValue = 0.0;
+                this.prevBassEnergy = 0.0;
+            }
+
+            reset() {
+                this.lastBeatTime = -999;
+                this.currentBeatIndex = 0;
+                this.envelopeValue = 0.0;
+                this.prevBassEnergy = 0.0;
+            }
+
+            analyzeAudioBuffer(buffer) {
+                const sampleRate = buffer.sampleRate;
+                const channelData = buffer.getChannelData(0);
+                const stepSize = Math.floor(sampleRate * 0.015);
+                const totalSteps = Math.floor(channelData.length / stepSize);
+
+                if (totalSteps < 100) return;
+
+                const onsetCurve = new Float32Array(totalSteps);
+                let prevEnergy = 0;
+
+                for (let i = 0; i < totalSteps; i++) {
+                    const start = i * stepSize;
+                    let sum = 0;
+                    for (let s = 0; s < stepSize; s += 4) {
+                        const val = channelData[start + s];
+                        sum += val * val;
+                    }
+                    const energy = Math.sqrt(sum / (stepSize / 4));
+                    const diff = energy - prevEnergy;
+                    onsetCurve[i] = diff > 0 ? diff : 0;
+                    prevEnergy = energy;
+                }
+
+                const minBpm = 75;
+                const maxBpm = 175;
+                const stepsPerSec = sampleRate / stepSize;
+                const minLag = Math.floor((60 / maxBpm) * stepsPerSec);
+                const maxLag = Math.floor((60 / minBpm) * stepsPerSec);
+
+                let bestCorrelation = -1;
+                let bestLag = Math.floor((60 / 126.0) * stepsPerSec);
+
+                const scanLimit = Math.min(totalSteps - maxLag, Math.floor(stepsPerSec * 45));
+                for (let lag = minLag; lag <= maxLag; lag++) {
+                    let corr = 0;
+                    for (let i = 0; i < scanLimit; i++) {
+                        corr += onsetCurve[i] * onsetCurve[i + lag];
+                    }
+                    if (corr > bestCorrelation) {
+                        bestCorrelation = corr;
+                        bestLag = lag;
+                    }
+                }
+
+                const detectedBpm = (60 * stepsPerSec) / bestLag;
+                this.bpm = Math.round(detectedBpm * 2) / 2;
+                this.beatInterval = 60 / this.bpm;
+
+                const lagSteps = bestLag;
+                let maxPhaseScore = -1;
+                let bestPhaseStep = 0;
+
+                for (let phase = 0; phase < lagSteps; phase++) {
+                    let score = 0;
+                    for (let b = 0; b < 16; b++) {
+                        const idx = phase + b * lagSteps;
+                        if (idx < totalSteps) score += onsetCurve[idx];
+                    }
+                    if (score > maxPhaseScore) {
+                        maxPhaseScore = score;
+                        bestPhaseStep = phase;
+                    }
+                }
+
+                this.firstBeatOffset = (bestPhaseStep * stepSize) / sampleRate;
+
+                document.getElementById('hudBpm').innerText = `${this.bpm.toFixed(1)} BPM`;
+                document.getElementById('paramBpm').value = this.bpm;
+                document.getElementById('valTrackBpm').innerText = this.bpm.toFixed(1);
+            }
+
+            processBeatImpact(currentTime, instantBass = 0, cx = 0, cy = 0, hue = 240) {
+                const dt = 0.016;
+                const stiffness = state.springStiffness;
+                const damping = state.springDamping;
+
+                if (currentTime < this.firstBeatOffset) {
+                    this.envelopeValue *= 0.88;
+                    logoSpring.update(dt, stiffness, damping);
+                    bgZoomSpring.update(dt, stiffness * 0.85, damping * 1.1);
+                    return { beatEnergy: 0, punchVelocity: 0, logoScale: 0, bgZoom: 1.0 };
+                }
+
+                const timeSinceT0 = currentTime - this.firstBeatOffset;
+                const beatNumber = Math.floor(timeSinceT0 / this.beatInterval);
+                const beatPhase = (timeSinceT0 % this.beatInterval) / this.beatInterval;
+
+                this.currentBeatIndex = beatNumber % 4;
+
+                const bassFlux = Math.max(0, instantBass - this.prevBassEnergy);
+                this.prevBassEnergy = instantBass;
+
+                let punchVelocity = 0;
+                const isNearMetronomeTick = beatPhase < 0.12;
+
+                if (isNearMetronomeTick && (currentTime - this.lastBeatTime) > (this.beatInterval * 0.75)) {
+                    this.lastBeatTime = currentTime;
+
+                    const downbeatBonus = (this.currentBeatIndex === 0) ? 1.3 : 1.0;
+                    punchVelocity = Math.min(2.0, (instantBass * 0.8 + bassFlux * 4.8) * downbeatBonus * state.logoPunch);
+
+                    logoSpring.impulse(punchVelocity * 28.0);
+
+                    if (state.layers.bgZoom) {
+                        const zoomKick = punchVelocity * state.bgZoomIntensity * 3.5;
+                        bgZoomSpring.impulse(zoomKick);
+                    }
+
+                    shockwaves.emit(cx, cy, state.innerRadius, punchVelocity, hue);
+                }
+
+                logoSpring.update(dt, stiffness, damping);
+                bgZoomSpring.update(dt, stiffness * 0.85, damping * 1.1);
+
+                const metronomeImpulse = isNearMetronomeTick ? Math.exp(-beatPhase * 16) : 0;
+                const targetEnvelope = Math.max(metronomeImpulse * (0.5 + punchVelocity * 0.5), instantBass * 0.7);
+
+                if (targetEnvelope > this.envelopeValue) {
+                    this.envelopeValue = targetEnvelope;
+                } else {
+                    this.envelopeValue *= 0.88;
+                }
+
+                return {
+                    beatEnergy: Math.min(1.5, this.envelopeValue),
+                    punchVelocity: punchVelocity,
+                    logoScale: logoSpring.value,
+                    bgZoom: Math.max(1.0, bgZoomSpring.value)
+                };
+            }
+
+            updateMetronomeHUD() {
+                for (let i = 0; i < 4; i++) {
+                    const dot = document.getElementById(`dot-${i}`);
+                    if (i === this.currentBeatIndex && this.envelopeValue > 0.35) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                }
+            }
+        }
+        const metronome = new MetronomeTracker();
+
+        class WhiteParticleField {
+            constructor(maxCount) {
+                this.max = maxCount;
+                this.x = new Float32Array(maxCount);
+                this.y = new Float32Array(maxCount);
+                this.z = new Float32Array(maxCount);
+                this.size = new Float32Array(maxCount);
+                this.baseAlpha = new Float32Array(maxCount);
+                
+                for (let i = 0; i < maxCount; i++) {
+                    this.reset(i, true);
+                }
+            }
+
+            reset(i, randomZ = false) {
+                this.x[i] = (Math.random() - 0.5) * 2000;
+                this.y[i] = (Math.random() - 0.5) * 1400;
+                this.z[i] = randomZ ? Math.random() * 1000 + 1 : 1000;
+                this.size[i] = Math.random() * 2.2 + 0.8;
+                this.baseAlpha[i] = Math.random() * 0.5 + 0.5;
+            }
+
+            updateAndRender(ctx, width, height, beatEnergy, punchScale, globalAlpha) {
+                const cx = width / 2;
+                const cy = height / 2;
+                const speed = 2.5 + beatEnergy * 10 + punchScale * 18;
+
+                for (let i = 0; i < state.particleCount; i++) {
+                    this.z[i] -= speed;
+                    if (this.z[i] <= 1) {
+                        this.reset(i, false);
+                        continue;
+                    }
+
+                    const scale = 450 / this.z[i];
+                    const sx = cx + this.x[i] * scale;
+                    const sy = cy + this.y[i] * scale;
+
+                    if (sx < 0 || sx >= width || sy < 0 || sy >= height) {
+                        this.reset(i, false);
+                        continue;
+                    }
+
+                    const depthFactor = Math.min(1.0, (1000 - this.z[i]) / 800);
+                    const finalAlpha = Math.min(1.0, Math.max(0.01, depthFactor * globalAlpha * this.baseAlpha[i]));
+                    const radius = Math.max(0.6, this.size[i] * scale * (1 + beatEnergy * 0.6));
+
+                    ctx.fillStyle = `rgba(255, 255, 255, ${finalAlpha.toFixed(3)})`;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        const particleSystem = new WhiteParticleField(260);
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+                analyserNode = audioCtx.createAnalyser();
+                analyserNode.fftSize = FFT_SIZE;
+                analyserNode.smoothingTimeConstant = 0.8;
+
+                gainNode = audioCtx.createGain();
+                gainNode.gain.value = 0.85;
+
+                gainNode.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function generateDemoEDMTrack() {
+            initAudioContext();
+            if (audioElement.src) {
+                audioElement.pause();
+                state.isPlaying = false;
+            }
+
+            const sampleRate = audioCtx.sampleRate;
+            const duration = 16.0;
+            const totalSamples = sampleRate * duration;
+            const buffer = audioCtx.createBuffer(2, totalSamples, sampleRate);
+            const chL = buffer.getChannelData(0);
+            const chR = buffer.getChannelData(1);
+
+            const bpm = 126;
+            const beatDur = 60 / bpm;
+
+            for (let i = 0; i < totalSamples; i++) {
+                const t = i / sampleRate;
+                let sample = 0;
+
+                const kickPhase = t % beatDur;
+                if (kickPhase < 0.28) {
+                    const kickFreq = 160 * Math.exp(-kickPhase * 30) + 42;
+                    const kickEnv = Math.exp(-kickPhase * 12);
+                    sample += Math.sin(2 * Math.PI * kickFreq * kickPhase) * kickEnv * 0.95;
+                }
+
+                const hatPhase = (t + beatDur * 0.5) % beatDur;
+                if (hatPhase < 0.12) {
+                    const noise = (Math.random() * 2 - 1);
+                    const hatEnv = Math.exp(-hatPhase * 40);
+                    sample += noise * hatEnv * 0.22;
+                }
+
+                const sixteenth = beatDur / 4;
+                const step = Math.floor(t / sixteenth);
+                const stepPhase = t % sixteenth;
+                const notes = [55, 55, 65.4, 55, 73.4, 55, 82.4, 73.4];
+                const freq = notes[step % notes.length];
+                const bassEnv = Math.exp(-stepPhase * 12);
+                sample += (Math.sin(2 * Math.PI * freq * stepPhase) + 0.3 * Math.sin(4 * Math.PI * freq * stepPhase)) * bassEnv * 0.45;
+
+                const padPhase = t % (beatDur * 4);
+                const padEnv = Math.sin((padPhase / (beatDur * 4)) * Math.PI);
+                const chordFrequencies = [220, 261.63, 329.63];
+                for (let c = 0; c < chordFrequencies.length; c++) {
+                    sample += Math.sin(2 * Math.PI * chordFrequencies[c] * t) * padEnv * 0.08;
+                }
+
+                chL[i] = Math.max(-1, Math.min(1, sample));
+                chR[i] = Math.max(-1, Math.min(1, sample));
+            }
+
+            decodedAudioBuffer = buffer;
+            state.duration = duration;
+            drawWaveform(buffer);
+
+            metronome.analyzeAudioBuffer(buffer);
+
+            const wavBlob = audioBufferToWavBlob(buffer);
+            audioElement.src = URL.createObjectURL(wavBlob);
+            audioElement.loop = document.getElementById('loopToggle').checked;
+
+            if (!sourceNode) {
+                sourceNode = audioCtx.createMediaElementSource(audioElement);
+                sourceNode.connect(analyserNode);
+                analyserNode.connect(gainNode);
+            }
+
+            audioElement.play().then(() => {
+                state.isPlaying = true;
+                document.getElementById('btnPlayPause').innerText = '⏸ Pause';
+            }).catch(() => {});
+        }
+
+        function audioBufferToWavBlob(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1;
+            const bitDepth = 16;
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            const dataSize = buffer.length * blockAlign;
+            const arrayBuffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(arrayBuffer);
+
+            function writeString(offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            let offset = 44;
+            const channels = [];
+            for (let c = 0; c < numChannels; c++) channels.push(buffer.getChannelData(c));
+
+            for (let i = 0; i < buffer.length; i++) {
+                for (let c = 0; c < numChannels; c++) {
+                    const sample = Math.max(-1, Math.min(1, channels[c][i]));
+                    const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                    view.setInt16(offset, intSample, true);
+                    offset += 2;
+                }
+            }
+
+            return new Blob([arrayBuffer], { type: 'audio/wav' });
+        }
+
+        function loadLocalAudioFile(file) {
+            initAudioContext();
+            const url = URL.createObjectURL(file);
+            audioElement.src = url;
+            audioElement.loop = document.getElementById('loopToggle').checked;
+
+            if (!sourceNode) {
+                sourceNode = audioCtx.createMediaElementSource(audioElement);
+                sourceNode.connect(analyserNode);
+                analyserNode.connect(gainNode);
+            }
+
+            // Gunakan nama file audio otomatis sebagai judul lagu awal jika belum diubah
+            const rawTitle = file.name.replace(/\.[^/.]+$/, "");
+            if (rawTitle) {
+                state.trackTitle = rawTitle;
+                document.getElementById('inputTrackTitle').value = rawTitle;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                audioCtx.decodeAudioData(e.target.result.slice(0), (decoded) => {
+                    decodedAudioBuffer = decoded;
+                    state.duration = decoded.duration;
+                    drawWaveform(decoded);
+                    metronome.analyzeAudioBuffer(decoded);
+                });
+            };
+            reader.readAsArrayBuffer(file);
+
+            audioElement.play().then(() => {
+                state.isPlaying = true;
+                document.getElementById('btnPlayPause').innerText = '⏸ Pause';
+            }).catch(() => {});
+        }
+
+        function drawWaveform(buffer) {
+            const w = waveCanvas.parentElement.clientWidth;
+            const h = waveCanvas.parentElement.clientHeight;
+            waveCanvas.width = w;
+            waveCanvas.height = h;
+
+            waveCtx.clearRect(0, 0, w, h);
+            const data = buffer.getChannelData(0);
+            const step = Math.ceil(data.length / w);
+            const amp = h / 2;
+
+            waveCtx.fillStyle = 'rgba(99, 102, 241, 0.45)';
+            for (let i = 0; i < w; i++) {
+                let min = 1.0;
+                let max = -1.0;
+                for (let j = 0; j < step; j++) {
+                    const val = data[i * step + j];
+                    if (val < min) min = val;
+                    if (val > max) max = val;
+                }
+                waveCtx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+            }
+        }
+
+        function extractWindowedFFT(buffer, targetTime, fftSize = 512) {
+            const half = fftSize / 2;
+            const freqOut = new Float32Array(half);
+            const timeOut = new Float32Array(half);
+            if (!buffer) return { freq: freqOut, time: timeOut };
+
+            const ch0 = buffer.getChannelData(0);
+            const sampleRate = buffer.sampleRate;
+            const centerSample = Math.floor(targetTime * sampleRate);
+            const startSample = centerSample - half;
+
+            const real = new Float32Array(fftSize);
+            const imag = new Float32Array(fftSize);
+
+            for (let i = 0; i < fftSize; i++) {
+                const sIdx = startSample + i;
+                const sampleVal = (sIdx >= 0 && sIdx < ch0.length) ? ch0[sIdx] : 0;
+                const window = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (fftSize - 1)));
+                real[i] = sampleVal * window;
+                imag[i] = 0;
+                if (i < half) timeOut[i] = sampleVal;
+            }
+
+            let j = 0;
+            for (let i = 0; i < fftSize - 1; i++) {
+                if (i < j) {
+                    const tr = real[i]; real[i] = real[j]; real[j] = tr;
+                    const ti = imag[i]; imag[i] = imag[j]; imag[j] = ti;
+                }
+                let k = fftSize >> 1;
+                while (k <= j) {
+                    j -= k;
+                    k >>= 1;
+                }
+                j += k;
+            }
+
+            for (let len = 2; len <= fftSize; len <<= 1) {
+                const halfLen = len >> 1;
+                const angle = -2 * Math.PI / len;
+                const wStepR = Math.cos(angle);
+                const wStepI = Math.sin(angle);
+
+                for (let i = 0; i < fftSize; i += len) {
+                    let wr = 1;
+                    let wi = 0;
+                    for (let m = 0; m < halfLen; m++) {
+                        const uR = real[i + m];
+                        const uI = imag[i + m];
+                        const vR = real[i + m + halfLen] * wr - imag[i + m + halfLen] * wi;
+                        const vI = real[i + m + halfLen] * wi + imag[i + m + halfLen] * wr;
+
+                        real[i + m] = uR + vR;
+                        imag[i + m] = uI + vI;
+                        real[i + m + halfLen] = uR - vR;
+                        imag[i + m + halfLen] = uI - vI;
+
+                        const nextWr = wr * wStepR - wi * wStepI;
+                        wi = wr * wStepI + wi * wStepR;
+                        wr = nextWr;
+                    }
+                }
+            }
+
+            for (let i = 0; i < half; i++) {
+                const mag = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]) * 4.0;
+                freqOut[i] = Math.min(255, mag * 255);
+            }
+
+            return { freq: freqOut, time: timeOut };
+        }
+
+        function renderAdvancedBackground(ctx, width, height, bgImg, zoomFactor, shakeX, shakeY) {
+            const cx = width / 2;
+            const cy = height / 2;
+
+            ctx.save();
+
+            // Efek blur (jika didukung)
+            if (state.bgBlur > 0) {
+                ctx.filter = `blur(${state.bgBlur}px)`;
+            }
+
+            // Transformasi perbesaran pusat (Base Scale * Dynamic Beat Punch Zoom)
+            const totalScale = state.bgScale * zoomFactor;
+            ctx.translate(cx + shakeX, cy + shakeY);
+            ctx.scale(totalScale, totalScale);
+
+            // Geser posisi gambar (Panning)
+            const panOffsetX = (state.bgPanX / 100) * (width * 0.5);
+            const panOffsetY = (state.bgPanY / 100) * (height * 0.5);
+            ctx.translate(-cx + panOffsetX, -cy + panOffsetY);
+
+            if (bgImg) {
+                const iw = bgImg.naturalWidth || bgImg.width;
+                const ih = bgImg.naturalHeight || bgImg.height;
+
+                switch (state.bgMode) {
+                    case 'mirror-h': {
+                        // Sisi kiri gambar asli, sisi kanan di-mirror secara simetris
+                        ctx.save();
+                        // Gambar setengah kiri
+                        ctx.beginPath();
+                        ctx.rect(0, 0, cx, height);
+                        ctx.clip();
+                        ctx.drawImage(bgImg, 0, 0, width, height);
+                        ctx.restore();
+
+                        // Gambar setengah kanan terbalik
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(cx, 0, cx, height);
+                        ctx.clip();
+                        ctx.translate(width, 0);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(bgImg, 0, 0, width, height);
+                        ctx.restore();
+                        break;
+                    }
+
+                    case 'mirror-quad': {
+                        // 4 kuadran simetri (Kaleidoskop)
+                        const qw = cx;
+                        const qh = cy;
+
+                        // Kuadran 1 (Kiri Atas)
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(0, 0, qw, qh);
+                        ctx.clip();
+                        ctx.drawImage(bgImg, 0, 0, width, height);
+                        ctx.restore();
+
+                        // Kuadran 2 (Kanan Atas)
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(qw, 0, qw, qh);
+                        ctx.clip();
+                        ctx.translate(width, 0);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(bgImg, 0, 0, width, height);
+                        ctx.restore();
+
+                        // Kuadran 3 (Kiri Bawah)
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(0, qh, qw, qh);
+                        ctx.clip();
+                        ctx.translate(0, height);
+                        ctx.scale(1, -1);
+                        ctx.drawImage(bgImg, 0, 0, width, height);
+                        ctx.restore();
+
+                        // Kuadran 4 (Kanan Bawah)
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(qw, qh, qw, qh);
+                        ctx.clip();
+                        ctx.translate(width, height);
+                        ctx.scale(-1, -1);
+                        ctx.drawImage(bgImg, 0, 0, width, height);
+                        ctx.restore();
+                        break;
+                    }
+
+                    case 'tile': {
+                        // Mode repeat / tile
+                        const pattern = ctx.createPattern(bgImg, 'repeat');
+                        if (pattern) {
+                            ctx.fillStyle = pattern;
+                            ctx.fillRect(-width, -height, width * 3, height * 3);
+                        } else {
+                            ctx.drawImage(bgImg, 0, 0, width, height);
+                        }
+                        break;
+                    }
+
+                    case 'cover':
+                    default: {
+                        // Normal cover proporsional
+                        ctx.drawImage(bgImg, 0, 0, width, height);
+                        break;
+                    }
+                }
+            } else {
+                // Default dark elegant gradient jika belum ada gambar yang diunggah
+                const grad = ctx.createRadialGradient(cx, cy, 50, cx, cy, width * 0.7);
+                grad.addColorStop(0, '#151825');
+                grad.addColorStop(1, '#050609');
+                ctx.fillStyle = grad;
+                ctx.fillRect(-width * 0.5, -height * 0.5, width * 2, height * 2);
+            }
+
+            // Lapisan Dim / Opacity penggelap
+            ctx.filter = 'none';
+            if (state.bgDim > 0) {
+                ctx.fillStyle = `rgba(7, 8, 12, ${state.bgDim})`;
+                ctx.fillRect(-width, -height, width * 3, height * 3);
+            }
+
+            ctx.restore();
+        }
+
+        function renderBottomLeftBranding(ctx, width, height, accentColor) {
+            if (!state.layers.overlayText) return;
+
+            const chText = (state.channelName || "").trim();
+            const trText = (state.trackTitle || "").trim();
+            if (!chText && !trText) return;
+
+            ctx.save();
+
+            // Skala responsif terhadap tinggi kanvas (basis FHD 1080p)
+            const scale = height / 1080;
+            const marginX = 42 * scale;
+            const marginY = 46 * scale;
+
+            const chFontSize = Math.max(11, Math.round(15 * scale));
+            const trFontSize = Math.max(16, Math.round(28 * scale));
+            const pillPadX = 8 * scale;
+            const pillPadY = 3 * scale;
+            const barWidth = 4 * scale;
+            const gap = 12 * scale;
+
+            ctx.font = `800 ${chFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            const chMetrics = ctx.measureText(chText);
+
+            ctx.font = `800 ${trFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            const trMetrics = ctx.measureText(trText);
+
+            const totalTextHeight = (chFontSize + trFontSize + 8 * scale);
+            const startX = marginX;
+            const bottomY = height - marginY;
+            const topY = bottomY - totalTextHeight;
+
+            // 1. Neon Glowing Accent Bar di sebelah kiri teks
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.shadowColor = accentColor;
+            ctx.shadowBlur = 14 * scale;
+            ctx.fillStyle = accentColor;
+            ctx.fillRect(startX, topY, barWidth, totalTextHeight);
+            ctx.restore();
+
+            const textStartX = startX + barWidth + gap;
+
+            // 2. Channel Name Badge
+            if (chText) {
+                const badgeY = topY;
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 17, 23, 0.75)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(
+                    textStartX, 
+                    badgeY - 2 * scale, 
+                    chMetrics.width + pillPadX * 2, 
+                    chFontSize + pillPadY * 2, 
+                    3 * scale
+                );
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.font = `800 ${chFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                ctx.fillStyle = accentColor;
+                ctx.textBaseline = 'top';
+                ctx.textAlign = 'left';
+                ctx.fillText(chText.toUpperCase(), textStartX + pillPadX, badgeY + pillPadY * 0.5);
+                ctx.restore();
+            }
+
+            // 3. Track Title Text dengan bayangan halus
+            if (trText) {
+                const titleY = bottomY - trFontSize * 0.9;
+                ctx.save();
+                ctx.font = `800 ${trFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                ctx.fillStyle = '#ffffff';
+                ctx.textBaseline = 'alphabetic';
+                ctx.textAlign = 'left';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+                ctx.shadowBlur = 10 * scale;
+                ctx.shadowOffsetX = 2 * scale;
+                ctx.shadowOffsetY = 2 * scale;
+                ctx.fillText(trText, textStartX, bottomY);
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+
+        function renderScene(ctx, width, height, freqArray, timeArray, beatData, currentTimestamp, progressRatio) {
+            const cx = width / 2;
+            const cy = height / 2;
+
+            const { beatEnergy, punchVelocity, logoScale, bgZoom } = beatData;
+
+            // Guncangan kamera dinamis sesuai kekuatan ketukan
+            let shakeX = 0;
+            let shakeY = 0;
+            if (state.layers.shake && beatEnergy > 0.40) {
+                const intensity = (beatEnergy - 0.40) * state.bassShake * (1.0 + punchVelocity * 0.8);
+                shakeX = (Math.random() - 0.5) * intensity;
+                shakeY = (Math.random() - 0.5) * intensity;
+            }
+
+            ctx.save();
+            ctx.clearRect(0, 0, width, height);
+
+            // ==========================================
+            // 1. BACKGROUND DENGAN PUNCH ZOOM & PANNING
+            // ==========================================
+            if (state.layers.bg) {
+                const zoomFactor = state.layers.bgZoom ? bgZoom : 1.0;
+                renderAdvancedBackground(ctx, width, height, bgImage, zoomFactor, shakeX, shakeY);
+            } else {
+                ctx.fillStyle = '#050609';
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            ctx.translate(shakeX, shakeY);
+
+            // ==========================================
+            // 2. 3D WHITE STARFIELD
+            // ==========================================
+            if (state.layers.particles) {
+                particleSystem.updateAndRender(ctx, width, height, beatEnergy, punchVelocity, state.particleAlpha);
+            }
+
+            const hue = (currentTimestamp * 35) % 360;
+            const colorA = `hsl(${hue}, 100%, 65%)`;
+            const colorB = `hsl(${(hue + 85) % 360}, 100%, 60%)`;
+
+            // ==========================================
+            // 3. AUDIO VISUALIZER SPECTRUM
+            // ==========================================
+            if (state.layers.spectrum) {
+                switch (state.preset) {
+                    case 'trap':
+                        drawTrapNationRing(ctx, cx, cy, freqArray, beatEnergy, punchVelocity, logoScale, colorA, colorB);
+                        break;
+                    case 'linear':
+                        drawLinearDualEQ(ctx, width, height, freqArray, beatEnergy, colorA, colorB);
+                        break;
+                    case 'oscilloscope':
+                        drawOscilloscopeWave(ctx, cx, cy, timeArray, colorA, beatEnergy);
+                        break;
+                    case 'ribbon':
+                        drawCyberRibbon(ctx, width, height, freqArray, colorA, colorB, currentTimestamp);
+                        break;
+                }
+            }
+
+            // ==========================================
+            // 4. SHOCKWAVE RIPPLE RINGS
+            // ==========================================
+            shockwaves.updateAndRender(ctx);
+
+            // ==========================================
+            // 5. CENTER LOGO WITH PUNCH BOUNCE
+            // ==========================================
+            if (state.layers.logo) {
+                drawCenterLogoBadge(ctx, cx, cy, beatEnergy, punchVelocity, logoScale, progressRatio, colorA);
+            }
+
+            // ==========================================
+            // 6. CHANNEL NAME & TRACK TITLE (POJOK KIRI BAWAH)
+            // ==========================================
+            renderBottomLeftBranding(ctx, width, height, colorA);
+
+            ctx.restore();
+        }
+
+        function drawTrapNationRing(ctx, cx, cy, freqs, beat, punch, springRadius, col1, col2) {
+            const count = state.barCount;
+            const radius = state.innerRadius + springRadius + beat * 22;
+            const angleStep = (Math.PI * 2) / count;
+
+            const dynamicPunchMultiplier = 1.0 + (punch * (state.spectrumPunch - 1.0));
+            const barThickness = Math.max(2.5, (radius * 6.283) / count * 0.5) * (1.0 + punch * 0.35);
+
+            ctx.save();
+            if (state.layers.glow) {
+                ctx.globalCompositeOperation = 'lighter';
+            }
+            ctx.lineWidth = barThickness;
+            ctx.lineCap = 'round';
+
+            for (let i = 0; i < count; i++) {
+                const half = count / 2;
+                const dist = Math.abs(i - half);
+                const freqIndex = Math.floor(((half - dist) / half) * (FFT_SIZE / 4));
+                const normVal = (freqs[freqIndex] || 0) / 255;
+                const barLen = normVal * state.barAmp * dynamicPunchMultiplier * (1 + beat * 0.35);
+
+                const angle = i * angleStep - Math.PI / 2;
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+
+                const x1 = cx + cos * radius;
+                const y1 = cy + sin * radius;
+                const x2 = cx + cos * (radius + barLen);
+                const y2 = cy + sin * (radius + barLen);
+
+                ctx.strokeStyle = (i % 2 === 0) ? col1 : col2;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawLinearDualEQ(ctx, w, h, freqs, beat, col1, col2) {
+            const bars = state.barCount;
+            const totalWidth = w * 0.82;
+            const barWidth = totalWidth / bars;
+            const startX = (w - totalWidth) / 2;
+            const baselineY = h * 0.72;
+
+            ctx.save();
+            for (let i = 0; i < bars; i++) {
+                const freqIndex = Math.floor((i / bars) * (FFT_SIZE / 4));
+                const norm = (freqs[freqIndex] || 0) / 255;
+                const barH = norm * state.barAmp * (1 + beat * 0.4) * 1.5;
+
+                if (barH >= linearPeakCaps[i]) {
+                    linearPeakCaps[i] = barH;
+                } else {
+                    linearPeakCaps[i] = Math.max(0, linearPeakCaps[i] - 1.8);
+                }
+
+                const x = startX + i * barWidth;
+                const y = baselineY - barH;
+
+                const grad = ctx.createLinearGradient(x, baselineY, x, y);
+                grad.addColorStop(0, col1);
+                grad.addColorStop(1, col2);
+
+                ctx.fillStyle = grad;
+                ctx.fillRect(x, y, barWidth - 2, barH);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(x, baselineY - linearPeakCaps[i] - 3, barWidth - 2, 2);
+            }
+            ctx.restore();
+        }
+
+        function drawOscilloscopeWave(ctx, cx, cy, timeArray, col, beat) {
+            const radius = state.innerRadius * 1.15 + beat * 18;
+            ctx.save();
+            ctx.strokeStyle = col;
+            ctx.lineWidth = 3 + beat * 2;
+            ctx.beginPath();
+
+            const count = timeArray.length;
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2;
+                const sampleVal = timeArray[i] || 0;
+                const amp = sampleVal * (60 + beat * 25);
+                const r = radius + amp;
+
+                const x = cx + Math.cos(angle) * r;
+                const y = cy + Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            if (state.layers.glow) {
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.lineWidth = 8 + beat * 4;
+                ctx.strokeStyle = 'rgba(99, 102, 241, 0.45)';
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawCyberRibbon(ctx, w, h, freqs, col1, col2, t) {
+            ctx.save();
+            ctx.lineWidth = 4;
+            const grad = ctx.createLinearGradient(0, 0, w, 0);
+            grad.addColorStop(0, col1);
+            grad.addColorStop(1, col2);
+            ctx.strokeStyle = grad;
+
+            const baseY = h * 0.55;
+            const segments = 40;
+            const slice = w / segments;
+
+            ctx.beginPath();
+            for (let i = 0; i <= segments; i++) {
+                const freqIdx = Math.floor((i / segments) * 35);
+                const norm = (freqs[freqIdx] || 0) / 255;
+                const sineWave = Math.sin(i * 0.4 + t * 4) * 25;
+                const y = baseY - (norm * state.barAmp * 1.3) + sineWave;
+                const x = i * slice;
+
+                if (i === 0) ctx.moveTo(x, y);
+                else {
+                    const prevX = (i - 1) * slice;
+                    ctx.quadraticCurveTo(prevX, y, x, y);
+                }
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawCenterLogoBadge(ctx, cx, cy, beat, punch, springRadius, progress, accentCol) {
+            const radius = Math.max(20, state.innerRadius + springRadius);
+
+            ctx.save();
+
+            if (state.layers.glow && punch > 0.2) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius + 8, 0, Math.PI * 2);
+                ctx.strokeStyle = accentCol;
+                ctx.lineWidth = 6 + punch * 8;
+                ctx.globalAlpha = Math.min(0.8, punch * 0.7);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius + 4, -Math.PI / 2, (-Math.PI / 2) + (Math.PI * 2 * progress));
+            ctx.strokeStyle = accentCol;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#07080d';
+            ctx.fill();
+            ctx.lineWidth = 3 + Math.min(4, punch * 3);
+            ctx.strokeStyle = punch > 0.5 ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.25)';
+            ctx.stroke();
+
+            if (logoImage) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius - 2, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.drawImage(logoImage, cx - radius, cy - radius, radius * 2, radius * 2);
+                ctx.restore();
+            } else {
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `800 ${Math.round(radius * 0.22)}px -apple-system, sans-serif`;
+                ctx.fillText('AZIMA', cx, cy - 8);
+                ctx.font = `700 ${Math.round(radius * 0.11)}px -apple-system, sans-serif`;
+                ctx.fillStyle = '#6366f1';
+                ctx.fillText('STUDIO', cx, cy + 16);
+            }
+
+            ctx.restore();
+        }
+
+        let lastLiveTime = performance.now();
+        let frameCount = 0;
+        let fpsTime = 0;
+
+        function liveRenderLoop() {
+            requestAnimationFrame(liveRenderLoop);
+
+            if (state.isRenderingOffline) return;
+
+            const now = performance.now();
+            const dt = (now - lastLiveTime) / 1000;
+            lastLiveTime = now;
+
+            frameCount++;
+            fpsTime += dt;
+            if (fpsTime >= 0.5) {
+                document.getElementById('fpsReadout').innerText = `${Math.round(frameCount / fpsTime)} FPS`;
+                frameCount = 0;
+                fpsTime = 0;
+            }
+
+            let instantBass = 0;
+            if (analyserNode && state.isPlaying) {
+                analyserNode.getByteFrequencyData(liveFreqData);
+                analyserNode.getByteTimeDomainData(liveTimeData);
+
+                for (let i = 0; i < liveFreqData.length; i++) {
+                    smoothedFreq[i] = smoothedFreq[i] * 0.7 + liveFreqData[i] * 0.3;
+                }
+
+                let bSum = 0;
+                for (let i = 1; i <= 8; i++) bSum += smoothedFreq[i];
+                instantBass = (bSum / 8) / 255;
+            } else {
+                for (let i = 0; i < smoothedFreq.length; i++) smoothedFreq[i] *= 0.92;
+            }
+
+            state.currentTime = audioElement.currentTime || 0;
+            state.duration = audioElement.duration || state.duration || 0;
+            const progress = (state.duration > 0) ? (state.currentTime / state.duration) : 0;
+
+            const cx = viewportCanvas.width / 2;
+            const cy = viewportCanvas.height / 2;
+            const hue = ((now / 1000) * 35) % 360;
+
+            const beatData = metronome.processBeatImpact(state.currentTime, instantBass, cx, cy, hue);
+            metronome.updateMetronomeHUD();
+
+            renderScene(
+                vCtx,
+                viewportCanvas.width,
+                viewportCanvas.height,
+                smoothedFreq,
+                liveTimeData,
+                beatData,
+                now / 1000,
+                progress
+            );
+
+            document.getElementById('timeDisplay').innerText = `${formatTime(state.currentTime)} / ${formatTime(state.duration)}`;
+            if (state.duration > 0) {
+                playhead.style.left = `${Math.min(100, Math.max(0, progress * 100))}%`;
+            }
+        }
+
+        function formatTime(sec) {
+            if (isNaN(sec) || sec < 0) return "00:00";
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        async function startOfflineBackgroundRender() {
+            if (!decodedAudioBuffer) {
+                alert("Silakan muat file audio atau klik 'Generate Synth Beat' terlebih dahulu!");
+                return;
+            }
+
+            state.isRenderingOffline = true;
+            state.cancelRenderRequested = false;
+
+            metronome.reset();
+            shockwaves.reset();
+            logoSpring.reset(0);
+            bgZoomSpring.reset(1.0);
+
+            if (state.isPlaying) {
+                audioElement.pause();
+                state.isPlaying = false;
+                document.getElementById('btnPlayPause').innerText = '▶ Play';
+            }
+
+            const exportW = parseInt(document.getElementById('exportResolution').value === '1080' ? 1920 : 1280);
+            const exportH = parseInt(document.getElementById('exportResolution').value === '1080' ? 1080 : 720);
+            const fps = 30;
+
+            const thermalProfile = document.getElementById('exportThermalProfile').value;
+            let pacingSleepMs = 12;
+            let maxBackpressureQueue = 4;
+            if (thermalProfile === 'eco') {
+                pacingSleepMs = 32;
+                maxBackpressureQueue = 2;
+            } else if (thermalProfile === 'turbo') {
+                pacingSleepMs = 2;
+                maxBackpressureQueue = 12;
+            }
+
+            offscreenExportCanvas.width = exportW;
+            offscreenExportCanvas.height = exportH;
+
+            const statusText = document.getElementById('renderStatusText');
+            const percentText = document.getElementById('renderPercentText');
+            const fillBar = document.getElementById('renderProgressFill');
+            const statFrames = document.getElementById('statFrames');
+            const statElapsed = document.getElementById('statElapsed');
+            const statEta = document.getElementById('statEta');
+            const btnDownloadBackup = document.getElementById('btnDownloadBackup');
+            const btnStartExport = document.getElementById('btnStartExport');
+
+            btnDownloadBackup.style.display = 'none';
+            btnStartExport.disabled = true;
+            statusText.innerText = 'Menginisialisasi WebM Muxer & Punch Zoom Engine...';
+
+            const totalDuration = decodedAudioBuffer.duration;
+            const totalFrames = Math.floor(totalDuration * fps);
+            const dt = 1 / fps;
+            const startTime = performance.now();
+
+            try {
+                const muxer = new WebMMuxer.Muxer({
+                    target: new WebMMuxer.ArrayBufferTarget(),
+                    video: {
+                        codec: 'V_VP9',
+                        width: exportW,
+                        height: exportH,
+                        frameRate: fps
+                    },
+                    audio: {
+                        codec: 'A_OPUS',
+                        sampleRate: decodedAudioBuffer.sampleRate,
+                        numberOfChannels: decodedAudioBuffer.numberOfChannels
+                    }
+                });
+
+                const videoEncoder = new VideoEncoder({
+                    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+                    error: (e) => console.error("VideoEncoder error:", e)
+                });
+
+                await videoEncoder.configure({
+                    codec: 'vp09.00.10.08',
+                    width: exportW,
+                    height: exportH,
+                    bitrate: 4_500_000,
+                    framerate: fps
+                });
+
+                const audioEncoder = new AudioEncoder({
+                    output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+                    error: (e) => console.error("AudioEncoder error:", e)
+                });
+
+                await audioEncoder.configure({
+                    codec: 'opus',
+                    sampleRate: decodedAudioBuffer.sampleRate,
+                    numberOfChannels: decodedAudioBuffer.numberOfChannels,
+                    bitrate: 192_000
+                });
+
+                statusText.innerText = 'Mengompresi Audio Master (Opus)...';
+                const audioSampleRate = decodedAudioBuffer.sampleRate;
+                const numChannels = decodedAudioBuffer.numberOfChannels;
+                const totalAudioFrames = decodedAudioBuffer.length;
+                const chunkSize = 960;
+
+                for (let aOffset = 0; aOffset < totalAudioFrames; aOffset += chunkSize) {
+                    const currentChunkFrames = Math.min(chunkSize, totalAudioFrames - aOffset);
+                    const planarData = new Float32Array(currentChunkFrames * numChannels);
+
+                    for (let ch = 0; ch < numChannels; ch++) {
+                        const channelRaw = decodedAudioBuffer.getChannelData(ch);
+                        planarData.set(channelRaw.subarray(aOffset, aOffset + currentChunkFrames), ch * currentChunkFrames);
+                    }
+
+                    const audioData = new AudioData({
+                        format: 'f32-planar',
+                        sampleRate: audioSampleRate,
+                        numberOfFrames: currentChunkFrames,
+                        numberOfChannels: numChannels,
+                        timestamp: Math.round((aOffset / audioSampleRate) * 1e6),
+                        data: planarData
+                    });
+
+                    audioEncoder.encode(audioData);
+                    audioData.close();
+                }
+
+                await audioEncoder.flush();
+                statusText.innerText = 'Merender frame video (Branding & Punch Zoom Sync)...';
+
+                const cx = exportW / 2;
+                const cy = exportH / 2;
+
+                for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
+                    if (state.cancelRenderRequested) {
+                        statusText.innerText = 'Render dibatalkan oleh pengguna.';
+                        break;
+                    }
+
+                    while (videoEncoder.encodeQueueSize > maxBackpressureQueue) {
+                        await new Promise(r => setTimeout(r, 20));
+                    }
+
+                    const targetTime = frameIndex * dt;
+                    const progressRatio = targetTime / totalDuration;
+
+                    const { freq, time } = extractWindowedFFT(decodedAudioBuffer, targetTime, FFT_SIZE);
+
+                    let bSum = 0;
+                    for (let b = 1; b <= 8; b++) bSum += freq[b];
+                    const instantBass = (bSum / 8) / 255;
+
+                    const hue = (targetTime * 35) % 360;
+                    const beatData = metronome.processBeatImpact(targetTime, instantBass, cx, cy, hue);
+
+                    renderScene(
+                        exportCtx,
+                        exportW,
+                        exportH,
+                        freq,
+                        time,
+                        beatData,
+                        targetTime,
+                        progressRatio
+                    );
+
+                    const timestampMicros = Math.round(frameIndex * (1e6 / fps));
+                    const vFrame = new VideoFrame(offscreenExportCanvas, {
+                        timestamp: timestampMicros,
+                        duration: Math.round(1e6 / fps)
+                    });
+
+                    const keyFrame = (frameIndex % (fps * 2) === 0);
+                    videoEncoder.encode(vFrame, { keyFrame });
+                    vFrame.close();
+
+                    if (frameIndex % 8 === 0) {
+                        previewCtx.drawImage(offscreenExportCanvas, 0, 0, exportPreviewCanvas.width, exportPreviewCanvas.height);
+                    }
+
+                    const percent = ((frameIndex + 1) / totalFrames) * 100;
+                    percentText.innerText = `${percent.toFixed(1)}%`;
+                    fillBar.style.width = `${percent}%`;
+                    statFrames.innerText = `${frameIndex + 1} / ${totalFrames}`;
+
+                    const elapsedMs = performance.now() - startTime;
+                    statElapsed.innerText = formatTime(elapsedMs / 1000);
+
+                    const msPerFrame = elapsedMs / (frameIndex + 1);
+                    const remainingMs = msPerFrame * (totalFrames - (frameIndex + 1));
+                    statEta.innerText = formatTime(remainingMs / 1000);
+
+                    if (pacingSleepMs > 0) {
+                        await new Promise(r => setTimeout(r, pacingSleepMs));
+                    }
+                }
+
+                if (!state.cancelRenderRequested) {
+                    statusText.innerText = 'Memfinalisasi kontainer video WebM...';
+                    await videoEncoder.flush();
+                    muxer.finalize();
+
+                    const { buffer } = muxer.target;
+                    const videoBlob = new Blob([buffer], { type: 'video/webm' });
+                    const downloadUrl = URL.createObjectURL(videoBlob);
+
+                    const safeChannel = (state.channelName || "azima").toLowerCase().replace(/[^a-z0-9]/g, "-");
+                    const safeTrack = (state.trackTitle || "visualizer").toLowerCase().replace(/[^a-z0-9]/g, "-");
+                    const fileName = `${safeChannel}-${safeTrack}-${Date.now()}.webm`;
+
+                    const autoLink = document.createElement('a');
+                    autoLink.href = downloadUrl;
+                    autoLink.download = fileName;
+                    document.body.appendChild(autoLink);
+                    autoLink.click();
+                    document.body.removeChild(autoLink);
+
+                    btnDownloadBackup.href = downloadUrl;
+                    btnDownloadBackup.download = fileName;
+                    btnDownloadBackup.style.display = 'inline-flex';
+                    statusText.innerText = '✅ Ekspor Berhasil! Video terunduh otomatis.';
+                }
+
+            } catch (err) {
+                console.error("Render offline gagal:", err);
+                statusText.innerText = `Error: ${err.message}`;
+            } finally {
+                state.isRenderingOffline = false;
+                btnStartExport.disabled = false;
+            }
+        }
+
+        document.getElementById('btnPlayPause').addEventListener('click', () => {
+            initAudioContext();
+            if (!audioElement.src) {
+                generateDemoEDMTrack();
+                return;
+            }
+            if (state.isPlaying) {
+                audioElement.pause();
+                state.isPlaying = false;
+                document.getElementById('btnPlayPause').innerText = '▶ Play';
+            } else {
+                audioElement.play();
+                state.isPlaying = true;
+                document.getElementById('btnPlayPause').innerText = '⏸ Pause';
+            }
+        });
+
+        document.getElementById('loopToggle').addEventListener('change', (e) => {
+            audioElement.loop = e.target.checked;
+        });
+
+        document.getElementById('volumeSlider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            if (gainNode) gainNode.gain.value = val;
+            audioElement.volume = val;
+        });
+
+        document.getElementById('btnChooseAudio').addEventListener('click', () => document.getElementById('audioFileInput').click());
+        document.getElementById('audioFileInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) loadLocalAudioFile(e.target.files[0]);
+        });
+        document.getElementById('btnGenerateEDM').addEventListener('click', generateDemoEDMTrack);
+
+        // Input Teks Nama Channel & Judul Lagu
+        document.getElementById('inputChannelName').addEventListener('input', (e) => {
+            state.channelName = e.target.value;
+        });
+        document.getElementById('inputTrackTitle').addEventListener('input', (e) => {
+            state.trackTitle = e.target.value;
+        });
+
+        // Pengaturan Mode Background
+        document.getElementById('selectBgMode').addEventListener('change', (e) => {
+            state.bgMode = e.target.value;
+        });
+
+        // Unggah Gambar Logo & Background
+        document.getElementById('btnSelectLogo').addEventListener('click', () => document.getElementById('logoInput').click());
+        document.getElementById('logoInput').addEventListener('change', (e) => {
+            const f = e.target.files[0];
+            if (f) {
+                const r = new FileReader();
+                r.onload = (ev) => {
+                    logoImage = new Image();
+                    logoImage.src = ev.target.result;
+                };
+                r.readAsDataURL(f);
+            }
+        });
+
+        document.getElementById('btnSelectBg').addEventListener('click', () => document.getElementById('bgInput').click());
+        document.getElementById('bgInput').addEventListener('change', (e) => {
+            const f = e.target.files[0];
+            if (f) {
+                const r = new FileReader();
+                r.onload = (ev) => {
+                    bgImage = new Image();
+                    bgImage.src = ev.target.result;
+                };
+                r.readAsDataURL(f);
+            }
+        });
+
+        document.getElementById('btnResetImages').addEventListener('click', () => {
+            logoImage = null;
+            bgImage = null;
+        });
+
+        // Layer Toggles
+        ['Shake', 'BgZoom', 'Shockwaves', 'Glow', 'Spectrum', 'Particles', 'Logo', 'OverlayText', 'Bg'].forEach(l => {
+            const el = document.getElementById(`layer${l}`);
+            if (el) {
+                el.addEventListener('change', (e) => {
+                    const key = l.charAt(0).toLowerCase() + l.slice(1);
+                    state.layers[key] = e.target.checked;
+                });
+            }
+        });
+
+        document.querySelectorAll('.preset-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                state.preset = this.dataset.preset;
+            });
+        });
+
+        document.getElementById('paramBpm').addEventListener('input', (e) => {
+            const bpm = parseFloat(e.target.value);
+            metronome.bpm = bpm;
+            metronome.beatInterval = 60 / bpm;
+            document.getElementById('valTrackBpm').innerText = bpm.toFixed(1);
+            document.getElementById('hudBpm').innerText = `${bpm.toFixed(1)} BPM`;
+        });
+
+        function hookSlider(id, valId, key, isFloat = false, suffix = '') {
+            const el = document.getElementById(id);
+            const valEl = document.getElementById(valId);
+            el.addEventListener('input', (e) => {
+                const v = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value);
+                state[key] = v;
+                if (valEl) valEl.innerText = (isFloat ? v.toFixed(2) : v) + suffix;
+            });
+        }
+
+        // Hook Slider Background Baru
+        hookSlider('paramBgPanX', 'valBgPanX', 'bgPanX', false, '%');
+        hookSlider('paramBgPanY', 'valBgPanY', 'bgPanY', false, '%');
+        hookSlider('paramBgScale', 'valBgScale', 'bgScale', true, 'x');
+        hookSlider('paramBgDim', 'valBgDim', 'bgDim', true, '');
+        hookSlider('paramBgBlur', 'valBgBlur', 'bgBlur', false, ' px');
+
+        // Hook Slider Fisika & Visual
+        hookSlider('paramBgZoomIntensity', 'valBgZoomIntensity', 'bgZoomIntensity', true, '');
+        hookSlider('paramLogoPunch', 'valLogoPunch', 'logoPunch', true, 'x');
+        hookSlider('paramSpringStiffness', 'valSpringStiffness', 'springStiffness', false, '');
+        hookSlider('paramSpringDamping', 'valSpringDamping', 'springDamping', false, '');
+        hookSlider('paramSpectrumPunch', 'valSpectrumPunch', 'spectrumPunch', true, 'x');
+        hookSlider('paramParticleAlpha', 'valParticleAlpha', 'particleAlpha', true, '');
+        hookSlider('paramParticleCount', 'valParticleCount', 'particleCount');
+        hookSlider('paramRadius', 'valRadius', 'innerRadius');
+        hookSlider('paramShake', 'valShake', 'bassShake');
+        hookSlider('paramAmp', 'valAmp', 'barAmp');
+
+        const scrubber = document.getElementById('waveformScrubber');
+        scrubber.addEventListener('click', (e) => {
+            if (!state.duration) return;
+            const rect = scrubber.getBoundingClientRect();
+            const frac = (e.clientX - rect.left) / rect.width;
+            audioElement.currentTime = frac * state.duration;
+        });
+
+        document.querySelectorAll('.res-pill').forEach(pill => {
+            pill.addEventListener('click', function() {
+                document.querySelectorAll('.res-pill').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                const h = parseInt(this.dataset.res);
+                const w = Math.round(h * (16 / 9));
+                viewportCanvas.width = w;
+                viewportCanvas.height = h;
+            });
+        });
+
+        const exportModal = document.getElementById('exportModal');
+        document.getElementById('btnOpenExportModal').addEventListener('click', () => {
+            exportModal.classList.add('active');
+        });
+        document.getElementById('btnCancelRender').addEventListener('click', () => {
+            if (state.isRenderingOffline) state.cancelRenderRequested = true;
+            exportModal.classList.remove('active');
+        });
+
+        document.getElementById('btnStartExport').addEventListener('click', startOfflineBackgroundRender);
+
+        window.addEventListener('load', () => {
+            liveRenderLoop();
+        });
+    </script>
+</body>
+</html>
