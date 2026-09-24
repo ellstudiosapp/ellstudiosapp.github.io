@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azima Visualizer - Professional Studio Pro</title>
+    <!-- WebM Muxer library for deterministic offline video+audio muxing -->
+    <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.1.3/build/webm-muxer.js"></script>
+    <style>
+        :root {
+            --bg-darkest: #07080c;
+            --bg-panel: #0f1117;
+            --bg-panel-header: #151821;
+            --bg-input: #1b1e29;
+            --border-color: #232736;
+            --accent-primary: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --accent-hover: #4f46e5;
+            --accent-cyan: #06b6d4;
+            --accent-gold: #f59e0b;
+            --text-main: #f3f4f6;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --timeline-bg: #0a0b10;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-darkest);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Header */
+        header {
+            height: 46px;
+            background-color: var(--bg-panel-header);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 30;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-brand {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .app-title {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            color: var(--text-main);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Workspace 3-column Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            flex: 1;
+            height: calc(100vh - 191px);
+            background-color: var(--bg-darkest);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .panel {
+            background-color: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-left { border-right: 1px solid var(--border-color); }
+        .panel-right { border-left: 1px solid var(--border-color); }
+
+        .panel-header {
+            padding: 10px 14px;
+            background-color: var(--bg-panel-header);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 14px;
+        }
+
+        /* Viewport Canvas Center */
+        .viewport-wrapper {
+            position: relative;
+            background: radial-gradient(circle at center, #10131d 0%, #050609 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .canvas-frame {
+            position: relative;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: #000;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+        }
+
+        canvas#viewportCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .viewport-bottom-bar {
+            position: absolute;
+            bottom: 14px;
+            display: flex;
+            gap: 8px;
+            background: rgba(16, 18, 24, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .res-pill {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .res-pill.active, .res-pill:hover {
+            color: #fff;
+            background-color: rgba(99, 102, 241, 0.3);
+        }
+
+        /* Presets Grid */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .preset-chip {
+            background: var(--bg-panel-header);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .preset-chip:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+            background-color: rgba(99, 102, 241, 0.08);
+        }
+
+        .preset-chip.active {
+            border-color: var(--accent-primary);
+            background-color: rgba(99, 102, 241, 0.18);
+        }
+
+        .preset-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .preset-desc {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* Controls & Form Elements */
+        .ctrl-group {
+            margin-bottom: 12px;
+        }
+
+        .ctrl-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .ctrl-val {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        input[type="text"], select, textarea {
+            width: 100%;
+            background: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 7px 9px;
+            border-radius: 5px;
+            font-size: 12px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            appearance: none;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+        }
+
+        .btn {
+            background-color: var(--bg-panel-header);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover { background-color: var(--border-color); }
+        .btn-primary { background-color: var(--accent-primary); border-color: var(--accent-primary); color: #fff; }
+        .btn-full { width: 100%; }
+
+        /* Timeline Dock */
+        .timeline-area {
+            height: 145px;
+            background-color: var(--timeline-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+        }
+
+        .transport-row {
+            height: 40px;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .time-box {
+            font-family: monospace;
+            font-size: 12px;
+            background-color: var(--bg-input);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        .waveform-view {
+            flex: 1;
+            padding: 6px 16px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .waveform-hull {
+            width: 100%;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas#waveCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .playhead-line {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 2px;
+            background: #fff;
+            box-shadow: 0 0 8px #fff;
+            pointer-events: none;
+            transform: translateX(-50%);
+            left: 0%;
+            z-index: 5;
+        }
+
+        .lyric-markers-track {
+            position: relative;
+            width: 100%;
+            height: 24px;
+            margin-top: 4px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .lyric-block {
+            position: absolute;
+            top: 2px; bottom: 2px;
+            background: rgba(99, 102, 241, 0.35);
+            border-left: 1px solid var(--accent-primary);
+            border-right: 1px solid var(--accent-primary);
+            border-radius: 3px;
+            padding: 0 4px;
+            font-size: 9px;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: ew-resize;
+            display: flex;
+            align-items: center;
+            z-index: 4;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 6, 9, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        .modal-backdrop.active { display: flex; }
+
+        .export-dialog {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 460px;
+            padding: 20px;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .hidden-input { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-area">
+            <span class="badge-brand">AZIMA</span>
+            <span class="app-title">Professional Studio Pro</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="btnOpenExportModal">🎥 Export Video (.MP4 / .WebM)</button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+
+        <!-- Left Column: Subtitle & Import/Export -->
+        <aside class="panel panel-left">
+            <div class="panel-header">Subtitle & Lirik Editor</div>
+            <div class="panel-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                    <button class="btn" id="btnImportSub">📂 Impor Subtitle</button>
+                    <input type="file" id="subFileInput" class="hidden-input" accept=".txt,.srt">
+                    <button class="btn" id="btnExportSub">💾 Ekspor Subtitle</button>
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Editor Kontinu</span><span class="ctrl-val" id="lyricCountStatus">0 Baris</span></div>
+                    <textarea id="lyricsInput" placeholder="Ketik lirik per baris..."></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                    <button class="btn btn-primary" id="btnStampLyric">⏱️ Cap Waktu</button>
+                    <button class="btn" id="btnFormatSample">📝 Contoh</button>
+                </div>
+
+                <div class="panel-header" style="margin: 12px -14px 12px -14px;">Branding Teks</div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Nama Channel</span></div>
+                    <input type="text" id="inputChannel" value="AZIMA MUSIC">
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Judul Lagu</span></div>
+                    <input type="text" id="inputTrack" value="Electro Bass Drop">
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center Column: Viewport Canvas & Preview Resolution -->
+        <main class="viewport-wrapper">
+            <div class="canvas-frame">
+                <canvas id="viewportCanvas" width="1280" height="720"></canvas>
+            </div>
+            <div class="viewport-bottom-bar">
+                <button class="res-pill" id="preview720">720p HD Preview</button>
+                <button class="res-pill active" id="preview1080">1080p FHD Preview</button>
+            </div>
+        </main>
+
+        <!-- Right Column: Spectrum Presets, Trap Nation Blob & Background Properti -->
+        <aside class="panel panel-right">
+            <div class="panel-header">Visual & Background Engine</div>
+            <div class="panel-body">
+                <div class="ctrl-label-row" style="margin-bottom: 4px;"><span>Preset Spektrum</span></div>
+                <div class="preset-grid">
+                    <div class="preset-chip active" data-preset="trapBlob">
+                        <div class="preset-name">Trap Nation Blob</div>
+                        <div class="preset-desc">Melar Sesuai Kick</div>
+                    </div>
+                    <div class="preset-chip" data-preset="solidOval3Layer">
+                        <div class="preset-name">Solid Oval 3-Layer</div>
+                        <div class="preset-desc">Kick, Vocal & Musik</div>
+                    </div>
+                </div>
+
+                <!-- Properti Trap Nation Blob -->
+                <div class="panel-header" style="margin: 12px -14px 12px -14px;">Properti Blob Melar</div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Sensitivitas Gelombang Kick</span><span class="ctrl-val" id="valBlobSensitivity">1.5x</span></div>
+                    <input type="range" id="paramBlobSensitivity" min="0.5" max="3.0" step="0.1" value="1.5">
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Ketebalan Cincin Pelangi</span><span class="ctrl-val" id="valBlobWidth">16 px</span></div>
+                    <input type="range" id="paramBlobWidth" min="8" max="32" step="2" value="16">
+                </div>
+
+                <!-- Partikel 3D Properti -->
+                <div class="panel-header" style="margin: 12px -14px 12px -14px;">Partikel 3D</div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Mode Pergerakan</span></div>
+                    <select id="selectParticleMode">
+                        <option value="zoom" selected>Zoom In (Maju Mendekat)</option>
+                        <option value="bottom-up">Bottom to Top (Bawah ke Atas)</option>
+                    </select>
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Kecepatan Partikel</span><span class="ctrl-val" id="valPartSpeed">3.0x</span></div>
+                    <input type="range" id="paramPartSpeed" min="0.5" max="6.0" step="0.5" value="3.0">
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Ukuran Partikel</span><span class="ctrl-val" id="valPartSize">1.5x</span></div>
+                    <input type="range" id="paramPartSize" min="0.5" max="3.0" step="0.2" value="1.5">
+                </div>
+
+                <!-- Background Properti -->
+                <div class="panel-header" style="margin: 12px -14px 12px -14px;">Background & Flip</div>
+                <div class="ctrl-group">
+                    <button class="btn btn-full" id="btnSelectBg">🌄 Unggah Background</button>
+                    <input type="file" id="bgInput" class="hidden-input" accept="image/*">
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Mode Tampilan BG</span></div>
+                    <select id="selectBgMode">
+                        <option value="cover" selected>Normal Cover</option>
+                        <option value="mirror-h">Flip / Mirror Horizontal</option>
+                        <option value="mirror-quad">Quad Mirror (Kaleidoskop)</option>
+                        <option value="tile">Tile / Repeat</option>
+                    </select>
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Background Dim</span><span class="ctrl-val" id="valBgDim">0.45</span></div>
+                    <input type="range" id="paramBgDim" min="0" max="0.9" step="0.05" value="0.45">
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Background Blur</span><span class="ctrl-val" id="valBgBlur">0 px</span></div>
+                    <input type="range" id="paramBgBlur" min="0" max="25" step="1" value="0">
+                </div>
+
+                <div class="panel-header" style="margin: 12px -14px 12px -14px;">Sensitivitas</div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Amplitudo Spektrum</span><span class="ctrl-val" id="valAmp">120</span></div>
+                    <input type="range" id="paramAmp" min="40" max="250" value="120">
+                </div>
+                <div class="ctrl-group">
+                    <div class="ctrl-label-row"><span>Radius Logo Pusat</span><span class="ctrl-val" id="valRadius">160</span></div>
+                    <input type="range" id="paramRadius" min="80" max="240" value="160">
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Timeline Dock -->
+    <footer class="timeline-area">
+        <div class="transport-row">
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-primary" id="btnPlayPause">▶ Play</button>
+                <button class="btn" id="btnChooseAudio">📁 Pilih Audio</button>
+                <input type="file" id="audioFileInput" class="hidden-input" accept="audio/*">
+                <button class="btn" id="btnGenSynth">⚡ Buat Beat Instan</button>
+                <span class="time-box" id="timeDisplay">00:00 / 00:00</span>
+            </div>
+            <div>
+                <span style="font-size: 11px; color: var(--text-muted);">Loop</span>
+                <input type="checkbox" id="loopToggle" checked style="accent-color: var(--accent-primary);">
+            </div>
+        </div>
+
+        <div class="waveform-view" id="waveformScrubber">
+            <div class="waveform-hull">
+                <canvas id="waveCanvas"></canvas>
+                <div class="playhead-line" id="playhead"></div>
+            </div>
+            <div class="lyric-markers-track" id="lyricMarkersTrack"></div>
+        </div>
+    </footer>
+
+    <!-- Video Export Modal -->
+    <div class="modal-backdrop" id="exportModal">
+        <div class="export-dialog">
+            <div class="panel-header" style="margin: -20px -20px 10px -20px;">Video Renderer Berperforma Tinggi</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Resolusi Render</label>
+                    <select id="exportResolution">
+                        <option value="720">1280x720 (720p HD)</option>
+                        <option value="1080" selected>1920x1080 (1080p FHD)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Format Output</label>
+                    <select id="exportFormat">
+                        <option value="mp4" selected>Video MP4 (H.264 / AAC)</option>
+                        <option value="webm">Video WebM (VP9 / Opus)</option>
+                    </select>
+                </div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted);" id="renderStatusText">Siap merender video secara offline...</div>
+            <div style="width: 100%; height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden;">
+                <div id="renderProgressFill" style="height: 100%; width: 0%; background: var(--accent-primary);"></div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
+                <button class="btn" id="btnCancelRender">Tutup</button>
+                <button class="btn btn-primary" id="btnStartExport">🚀 Mulai Render Video</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="offscreenExportCanvas" width="1920" height="1080" class="hidden-input"></canvas>
+
+    <script>
+        const state = {
+            preset: 'trapBlob',
+            kickColor: '#06b6d4',
+            vocalColor: '#a855f7',
+            musicColor: '#6366f1',
+            blobSensitivity: 1.5,
+            blobWidth: 16,
+            particleMode: 'zoom',
+            partSpeed: 3.0,
+            partSize: 1.5,
+            bgMode: 'cover',
+            amp: 120,
+            radius: 160,
+            bgDim: 0.45,
+            bgBlur: 0,
+            bgScale: 1.05,
+            channel: "AZIMA MUSIC",
+            track: "Electro Bass Drop",
+            isPlaying: false,
+            currentTime: 0,
+            duration: 0,
+            isRendering: false
+        };
+
+        const canvas = document.getElementById('viewportCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const waveCanvas = document.getElementById('waveCanvas');
+        const waveCtx = waveCanvas.getContext('2d');
+        const offscreenCanvas = document.getElementById('offscreenExportCanvas');
+        const offCtx = offscreenCanvas.getContext('2d', { alpha: false });
+
+        let audioCtx = null;
+        let audioElement = new Audio();
+        audioElement.crossOrigin = "anonymous";
+        
+        let kickAnalyser = null;
+        let vocalAnalyser = null;
+        let musicAnalyser = null;
+
+        let kickFreqData = new Uint8Array(128);
+        let vocalFreqData = new Uint8Array(128);
+        let musicFreqData = new Uint8Array(128);
+
+        let decodedBuffer = null;
+        let bgImage = null;
+        let lyrics = [];
+
+        class ParticleSystem {
+            constructor(max) {
+                this.max = max;
+                this.x = new Float32Array(max);
+                this.y = new Float32Array(max);
+                this.z = new Float32Array(max);
+                for(let i=0; i<max; i++) this.reset(i, true);
+            }
+            reset(i, rnd) {
+                if (state.particleMode === 'bottom-up') {
+                    this.x[i] = (Math.random() - 0.5) * 1600;
+                    this.y[i] = 700 + Math.random() * 100;
+                    this.z[i] = Math.random() * 800 + 200;
+                } else {
+                    this.x[i] = (Math.random() - 0.5) * 2000;
+                    this.y[i] = (Math.random() - 0.5) * 1400;
+                    this.z[i] = rnd ? Math.random() * 1000 + 1 : 1000;
+                }
+            }
+            render(targetCtx, w, h, musicEnergy) {
+                const cx = w / 2, cy = h / 2;
+                const speed = state.partSpeed * (1.0 + musicEnergy * 2.0) * 2.0;
+
+                targetCtx.fillStyle = '#ffffff';
+                if (state.particleMode === 'bottom-up') {
+                    for(let i=0; i<this.max; i++) {
+                        this.y[i] -= speed * 1.5;
+                        if (this.y[i] < -h*0.5) { this.reset(i, false); continue; }
+                        targetCtx.beginPath();
+                        targetCtx.arc(cx + this.x[i]*0.7, cy + this.y[i], 1.2 * state.partSize, 0, Math.PI*2);
+                        targetCtx.fill();
+                    }
+                } else {
+                    for(let i=0; i<this.max; i++) {
+                        this.z[i] -= speed * 3.0;
+                        if (this.z[i] <= 1) { this.reset(i, false); continue; }
+                        const scale = 450 / this.z[i];
+                        const sx = cx + this.x[i] * scale;
+                        const sy = cy + this.y[i] * scale;
+                        if (sx < 0 || sx >= w || sy < 0 || sy >= h) { this.reset(i, false); continue; }
+                        targetCtx.beginPath();
+                        targetCtx.arc(sx, sy, Math.max(0.6, scale * 1.8 * state.partSize), 0, Math.PI*2);
+                        targetCtx.fill();
+                    }
+                }
+            }
+        }
+        const particles = new ParticleSystem(120);
+
+        function parseLyrics(text) {
+            const lines = text.split('\n').filter(l => l.trim().length > 0);
+            const dur = state.duration || 16.0;
+            const blockDur = dur / Math.max(1, lines.length);
+            let cursor = 0;
+            lyrics = lines.map(txt => {
+                const item = { start: cursor, duration: blockDur, text: txt.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/, '').trim() };
+                cursor += blockDur;
+                return item;
+            });
+            renderLyricBlocks();
+            document.getElementById('lyricCountStatus').innerText = `${lyrics.length} Baris`;
+        }
+
+        function renderLyricBlocks() {
+            const track = document.getElementById('lyricMarkersTrack');
+            track.innerHTML = '';
+            const dur = state.duration || 16.0;
+
+            lyrics.forEach((item, idx) => {
+                const block = document.createElement('div');
+                block.className = 'lyric-block';
+                block.style.left = `${(item.start / dur) * 100}%`;
+                block.style.width = `${(item.duration / dur) * 100}%`;
+                block.innerText = item.text;
+
+                block.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    const trRect = track.getBoundingClientRect();
+                    const startX = e.clientX;
+                    const orig = item.start;
+                    function onMove(ev) {
+                        const delta = ((ev.clientX - startX) / trRect.width) * dur;
+                        item.start = Math.max(0, orig + delta);
+                        if (idx > 0) lyrics[idx-1].duration = item.start - lyrics[idx-1].start;
+                        renderLyricBlocks();
+                    }
+                    function onUp() { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); }
+                    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+                });
+                track.appendChild(block);
+            });
+        }
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                const masterSource = audioCtx.createMediaElementSource(audioElement);
+                const masterGain = audioCtx.createGain();
+                masterGain.gain.value = 0.85;
+
+                const kickFilter = audioCtx.createBiquadFilter();
+                kickFilter.type = 'lowpass'; kickFilter.frequency.value = 130;
+                kickAnalyser = audioCtx.createAnalyser();
+                kickAnalyser.fftSize = 128; kickAnalyser.smoothingTimeConstant = 0.7;
+
+                const vocalFilter = audioCtx.createBiquadFilter();
+                vocalFilter.type = 'bandpass'; vocalFilter.frequency.value = 1000; vocalFilter.Q.value = 1.0;
+                vocalAnalyser = audioCtx.createAnalyser();
+                vocalAnalyser.fftSize = 128; vocalAnalyser.smoothingTimeConstant = 0.8;
+
+                musicAnalyser = audioCtx.createAnalyser();
+                musicAnalyser.fftSize = 256; musicAnalyser.smoothingTimeConstant = 0.8;
+
+                masterSource.connect(masterGain);
+                masterGain.connect(audioCtx.destination);
+
+                masterSource.connect(kickFilter); kickFilter.connect(kickAnalyser);
+                masterSource.connect(vocalFilter); vocalFilter.connect(vocalAnalyser);
+                masterSource.connect(musicAnalyser);
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function generateSynth() {
+            initAudio();
+            const sampleRate = audioCtx.sampleRate;
+            const dur = 16.0;
+            const buffer = audioCtx.createBuffer(2, sampleRate * dur, sampleRate);
+            const ch = buffer.getChannelData(0);
+            const beatDur = 60 / 126;
+
+            for (let i = 0; i < buffer.length; i++) {
+                const t = i / sampleRate;
+                const k = (t % beatDur);
+                if (k < 0.25) {
+                    ch[i] = Math.sin(2 * Math.PI * (140 * Math.exp(-k * 25) + 40) * k) * Math.exp(-k * 10);
+                }
+            }
+            decodedBuffer = buffer;
+            state.duration = dur;
+            parseLyrics(document.getElementById('lyricsInput').value);
+            drawWaveform(buffer);
+
+            audioElement.src = URL.createObjectURL(new Blob([encodeWAV(buffer)], { type: 'audio/wav' }));
+            audioElement.loop = document.getElementById('loopToggle').checked;
+            audioElement.play();
+            state.isPlaying = true;
+            document.getElementById('btnPlayPause').innerText = '⏸ Pause';
+        }
+
+        function encodeWAV(buffer) {
+            const data = buffer.getChannelData(0);
+            const ab = new ArrayBuffer(44 + data.length * 2);
+            const view = new DataView(ab);
+            function ws(off, str) { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); }
+            ws(0, 'RIFF'); view.setUint32(4, 36 + data.length * 2, true); ws(8, 'WAVE');
+            ws(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true); view.setUint32(24, buffer.sampleRate, true);
+            view.setUint32(28, buffer.sampleRate * 2, true); view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true); ws(36, 'data'); view.setUint32(40, data.length * 2, true);
+            let off = 44;
+            for (let i = 0; i < data.length; i++, off += 2) {
+                let s = Math.max(-1, Math.min(1, data[i]));
+                view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+            return ab;
+        }
+
+        function drawWaveform(buffer) {
+            const w = waveCanvas.width = waveCanvas.parentElement.clientWidth;
+            const h = waveCanvas.height = waveCanvas.parentElement.clientHeight;
+            waveCtx.clearRect(0, 0, w, h);
+            const data = buffer.getChannelData(0);
+            const step = Math.ceil(data.length / w);
+            const amp = h / 2;
+            waveCtx.fillStyle = 'rgba(99, 102, 241, 0.5)';
+            for (let i = 0; i < w; i++) {
+                let min = 1, max = -1;
+                for (let j = 0; j < step; j++) {
+                    let v = data[i * step + j];
+                    if (v < min) min = v; if (v > max) max = v;
+                }
+                waveCtx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+            }
+        }
+
+        function renderBackground(targetCtx, w, h) {
+            const cx = w / 2, cy = h / 2;
+            targetCtx.save();
+            if (state.bgBlur > 0) targetCtx.filter = `blur(${state.bgBlur}px)`;
+
+            if (bgImage) {
+                targetCtx.translate(cx, cy);
+                targetCtx.scale(state.bgScale, state.bgScale);
+                targetCtx.translate(-cx, -cy);
+
+                switch(state.bgMode) {
+                    case 'mirror-h':
+                        targetCtx.save(); targetCtx.beginPath(); targetCtx.rect(0, 0, cx, h); targetCtx.clip();
+                        targetCtx.drawImage(bgImage, 0, 0, w, h); targetCtx.restore();
+                        targetCtx.save(); targetCtx.beginPath(); targetCtx.rect(cx, 0, cx, h); targetCtx.clip();
+                        targetCtx.translate(w, 0); targetCtx.scale(-1, 1); targetCtx.drawImage(bgImage, 0, 0, w, h); targetCtx.restore();
+                        break;
+                    case 'mirror-quad':
+                        const qw = cx, qh = cy;
+                        targetCtx.save(); targetCtx.beginPath(); targetCtx.rect(0, 0, qw, qh); targetCtx.clip(); targetCtx.drawImage(bgImage, 0, 0, w, h); targetCtx.restore();
+                        targetCtx.save(); targetCtx.beginPath(); targetCtx.rect(qw, 0, qw, qh); targetCtx.clip(); targetCtx.translate(w, 0); targetCtx.scale(-1, 1); targetCtx.drawImage(bgImage, 0, 0, w, h); targetCtx.restore();
+                        targetCtx.save(); targetCtx.beginPath(); targetCtx.rect(0, qh, qw, qh); targetCtx.clip(); targetCtx.translate(0, h); targetCtx.scale(1, -1); targetCtx.drawImage(bgImage, 0, 0, w, h); targetCtx.restore();
+                        targetCtx.save(); targetCtx.beginPath(); targetCtx.rect(qw, qh, qw, qh); targetCtx.clip(); targetCtx.translate(w, h); targetCtx.scale(-1, -1); targetCtx.drawImage(bgImage, 0, 0, w, h); targetCtx.restore();
+                        break;
+                    case 'tile':
+                        const pat = targetCtx.createPattern(bgImage, 'repeat');
+                        if(pat) { targetCtx.fillStyle = pat; targetCtx.fillRect(-w, -h, w*3, h*3); }
+                        else { targetCtx.drawImage(bgImage, 0, 0, w, h); }
+                        break;
+                    case 'cover':
+                    default:
+                        targetCtx.drawImage(bgImage, 0, 0, w, h);
+                        break;
+                }
+            } else {
+                const grad = targetCtx.createRadialGradient(cx, cy, 50, cx, cy, w * 0.7);
+                grad.addColorStop(0, '#131622'); grad.addColorStop(1, '#050609');
+                targetCtx.fillStyle = grad; targetCtx.fillRect(0, 0, w, h);
+            }
+
+            targetCtx.filter = 'none';
+            if (state.bgDim > 0) {
+                targetCtx.fillStyle = `rgba(7, 8, 12, ${state.bgDim})`;
+                targetCtx.fillRect(0, 0, w, h);
+            }
+            targetCtx.restore();
+        }
+
+        // PRESET 1: Trap Nation Blob (Melar & Menggelembung akurat dari Isolated Kick Filter)
+        function drawTrapNationBlob(targetCtx, cx, cy, kickArr, timeSec) {
+            targetCtx.save();
+            targetCtx.globalCompositeOperation = 'lighter';
+
+            let kAvg = 0; for(let v of kickArr) kAvg += v; kAvg = (kAvg / kickArr.length) / 255;
+            const kickEnergy = kAvg * state.blobSensitivity;
+            const baseR = state.radius * (1.0 + kickEnergy * 0.5);
+            const points = 72;
+            const angleStep = (Math.PI * 2) / points;
+
+            const colors = [state.kickColor, state.vocalColor, state.musicColor];
+
+            colors.forEach((col, idx) => {
+                targetCtx.strokeStyle = col;
+                targetCtx.lineWidth = state.blobWidth - (idx * 3);
+                targetCtx.globalAlpha = 0.9 - (idx * 0.2);
+
+                targetCtx.beginPath();
+                for (let i = 0; i <= points; i++) {
+                    const angle = i * angleStep;
+                    const freqVal = (kickArr[i % kickArr.length] || 0) / 255;
+                    const waveMod = Math.sin(angle * 4 + timeSec * 8) * (state.amp * 0.35 * freqVal * state.blobSensitivity);
+                    
+                    const stretchX = Math.cos(angle) * (baseR + waveMod + idx * 5);
+                    const stretchY = Math.sin(angle) * (baseR * 0.78 + waveMod + idx * 5);
+
+                    const x = cx + stretchX;
+                    const y = cy + stretchY;
+
+                    if (i === 0) targetCtx.moveTo(x, y);
+                    else targetCtx.lineTo(x, y);
+                }
+                targetCtx.closePath();
+                targetCtx.stroke();
+            });
+            targetCtx.restore();
+        }
+
+        // PRESET 2: Solid Oval 3-Layer (Terpisah akurat dari multiple analyser filter)
+        function drawSolidOval3Layer(targetCtx, cx, cy, kickArr, vocalArr, musicArr) {
+            targetCtx.save();
+            targetCtx.globalCompositeOperation = 'lighter';
+            const count = 72;
+            const angleStep = (Math.PI * 2) / count;
+
+            let kAvg = 0; for(let v of kickArr) kAvg += v; kAvg = (kAvg / kickArr.length) / 255;
+            let vAvg = 0; for(let v of vocalArr) vAvg += v; vAvg = (vAvg / vocalArr.length) / 255;
+
+            // 1. KICK LAYER
+            targetCtx.lineWidth = 4;
+            for (let i = 0; i < count; i++) {
+                const angle = i * angleStep;
+                const val = (kickArr[i % kickArr.length] || 0) / 255;
+                const len = val * state.amp * 2.2 * (1.0 + kAvg * 2.5);
+                const rx = (state.radius * 1.5) + len;
+                const ry = (state.radius * 0.95) + len * 0.7;
+
+                targetCtx.strokeStyle = state.kickColor;
+                targetCtx.globalAlpha = 0.6;
+                targetCtx.beginPath();
+                targetCtx.moveTo(cx, cy);
+                targetCtx.lineTo(cx + Math.cos(angle) * rx, cy + Math.sin(angle) * ry);
+                targetCtx.stroke();
+            }
+
+            // 2. VOCAL LAYER
+            for (let i = 0; i < count; i++) {
+                const angle = i * angleStep;
+                const val = (vocalArr[i % vocalArr.length] || 0) / 255;
+                const len = val * state.amp * 1.4 * (1.0 + vAvg * 2.2);
+                const rx = (state.radius * 1.2) + len * 0.8;
+                const ry = (state.radius * 0.8) + len * 0.6;
+
+                targetCtx.globalAlpha = 0.85;
+                targetCtx.beginPath();
+                targetCtx.arc(cx + Math.cos(angle) * rx, cy + Math.sin(angle) * ry, 3.2, 0, Math.PI * 2);
+                targetCtx.fillStyle = state.vocalColor;
+                targetCtx.fill();
+            }
+
+            // 3. MUSIC LAYER
+            targetCtx.lineWidth = 5;
+            for (let i = 0; i < count; i++) {
+                const val = (musicArr[i % musicArr.length] || 0) / 255;
+                const len = val * state.amp * (1.0 + kAvg * 0.5);
+                const angle = i * angleStep - Math.PI / 2;
+                const r = state.radius + len * 0.5;
+
+                targetCtx.globalAlpha = 1.0;
+                targetCtx.strokeStyle = state.musicColor;
+                targetCtx.beginPath();
+                targetCtx.moveTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+                targetCtx.lineTo(cx + Math.cos(angle) * (r + Math.max(4, len * 0.4)), cy + Math.sin(angle) * (r + Math.max(4, len * 0.4)));
+                targetCtx.stroke();
+            }
+            targetCtx.restore();
+        }
+
+        function renderFrame(targetCtx, w, h, kArr, vArr, mArr, timeSec) {
+            const cx = w / 2, cy = h / 2;
+            const scale = h / 1080;
+
+            let kAvg = 0; for(let v of kArr) kAvg += v; kAvg = (kAvg / kArr.length) / 255;
+            let mAvg = 0; for(let v of mArr) mAvg += v; mAvg = (mAvg / mArr.length) / 255;
+
+            targetCtx.save();
+            targetCtx.clearRect(0, 0, w, h);
+
+            renderBackground(targetCtx, w, h);
+            particles.render(targetCtx, w, h, mAvg);
+
+            if (state.preset === 'trapBlob') {
+                drawTrapNationBlob(targetCtx, cx, cy, kArr, timeSec);
+            } else {
+                drawSolidOval3Layer(targetCtx, cx, cy, kArr, vArr, mArr);
+            }
+
+            // Center Logo & Disc
+            const logoR = state.radius * (0.62 + kAvg * 0.18);
+            targetCtx.save();
+            targetCtx.beginPath(); targetCtx.arc(cx, cy, logoR + 4 * scale, 0, Math.PI * 2);
+            targetCtx.strokeStyle = state.musicColor; targetCtx.lineWidth = 3 * scale; targetCtx.stroke();
+            targetCtx.beginPath(); targetCtx.arc(cx, cy, logoR, 0, Math.PI * 2);
+            targetCtx.fillStyle = '#0f1117'; targetCtx.fill();
+            targetCtx.fillStyle = '#fff';
+            targetCtx.font = `800 ${Math.round(logoR * 0.24)}px sans-serif`;
+            targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
+            targetCtx.fillText('AZIMA', cx, cy - 6 * scale);
+            targetCtx.fillStyle = state.musicColor;
+            targetCtx.font = `700 ${Math.round(logoR * 0.12)}px sans-serif`;
+            targetCtx.fillText('STUDIO', cx, cy + 14 * scale);
+            targetCtx.restore();
+
+            // Subtitle Lirik
+            if (lyrics.length > 0) {
+                let activeText = "";
+                for (let l of lyrics) {
+                    if (timeSec >= l.start && timeSec < l.start + l.duration) { activeText = l.text; break; }
+                }
+                if (activeText) {
+                    targetCtx.save();
+                    targetCtx.font = `800 ${Math.round(32 * scale)}px sans-serif`;
+                    targetCtx.fillStyle = '#ffffff'; targetCtx.textAlign = 'center';
+                    targetCtx.shadowColor = state.musicColor; targetCtx.shadowBlur = 14 * scale;
+                    targetCtx.fillText(activeText, cx, h * 0.80);
+                    targetCtx.restore();
+                }
+            }
+
+            // Branding Teks
+            targetCtx.save();
+            targetCtx.font = `800 ${Math.round(15 * scale)}px sans-serif`; targetCtx.fillStyle = state.musicColor;
+            targetCtx.fillText((state.channel || "").toUpperCase(), 42 * scale, h - 50 * scale);
+            targetCtx.font = `800 ${Math.round(26 * scale)}px sans-serif`; targetCtx.fillStyle = '#ffffff';
+            targetCtx.fillText(state.track || "", 42 * scale, h - 20 * scale);
+            targetCtx.restore();
+
+            targetCtx.restore();
+        }
+
+        function loop() {
+            requestAnimationFrame(loop);
+            if (state.isRendering) return;
+
+            if (analyserNode && state.isPlaying && kickAnalyser) {
+                kickAnalyser.getByteFrequencyData(kickFreqData);
+                vocalAnalyser.getByteFrequencyData(vocalFreqData);
+                musicAnalyser.getByteFrequencyData(freqData);
+            } else {
+                for (let i = 0; i < 128; i++) {
+                    kickFreqData[i] = Math.sin(performance.now() * 0.01 + i) * 80 + 80;
+                    vocalFreqData[i] = Math.cos(performance.now() * 0.008 + i) * 70 + 70;
+                    freqData[i] = Math.sin(performance.now() * 0.005 + i) * 60 + 60;
+                }
+            }
+
+            state.currentTime = audioElement.currentTime || 0;
+            renderFrame(ctx, canvas.width, canvas.height, kickFreqData, vocalFreqData, freqData, state.currentTime);
+            
+            document.getElementById('timeDisplay').innerText = `${fmtTime(state.currentTime)} / ${fmtTime(state.duration || 16)}`;
+            if (state.duration > 0) {
+                document.getElementById('playhead').style.left = `${(state.currentTime / state.duration) * 100}%`;
+            }
+        }
+
+        function fmtTime(s) {
+            const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+            return `${m < 10 ? '0' : ''}${m}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        // Preview Resolution 720 & 1080
+        document.getElementById('preview720').addEventListener('click', function() {
+            document.querySelectorAll('.viewport-wrapper .res-pill').forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            canvas.width = 1280; canvas.height = 720;
+        });
+        document.getElementById('preview1080').addEventListener('click', function() {
+            document.querySelectorAll('.viewport-wrapper .res-pill').forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            canvas.width = 1920; canvas.height = 1080;
+        });
+
+        // Subtitle Impor & Ekspor
+        document.getElementById('btnImportSub').addEventListener('click', () => document.getElementById('subFileInput').click());
+        document.getElementById('subFileInput').addEventListener('change', (e) => {
+            const f = e.target.files[0];
+            if (f) {
+                const r = new FileReader();
+                r.onload = ev => {
+                    document.getElementById('lyricsInput').value = ev.target.result;
+                    parseLyrics(ev.target.result);
+                };
+                r.readAsText(f);
+            }
+        });
+        document.getElementById('btnExportSub').addEventListener('click', () => {
+            const txt = lyrics.map(l => l.text).join('\n');
+            const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'azima-subtitles.txt'; a.click();
+        });
+
+        document.getElementById('btnPlayPause').addEventListener('click', () => {
+            initAudio();
+            if (!audioElement.src) { generateSynth(); return; }
+            if (state.isPlaying) { audioElement.pause(); state.isPlaying = false; document.getElementById('btnPlayPause').innerText = '▶ Play'; }
+            else { audioElement.play(); state.isPlaying = true; document.getElementById('btnPlayPause').innerText = '⏸ Pause'; }
+        });
+
+        document.getElementById('loopToggle').addEventListener('change', e => { audioElement.loop = e.target.checked; });
+        document.getElementById('btnChooseAudio').addEventListener('click', () => document.getElementById('audioFileInput').click());
+        document.getElementById('audioFileInput').addEventListener('change', e => {
+            if (e.target.files[0]) {
+                initAudio();
+                const f = e.target.files[0];
+                audioElement.src = URL.createObjectURL(f);
+                audioElement.play(); state.isPlaying = true;
+                state.track = f.name.replace(/\.[^/.]+$/, "");
+                document.getElementById('inputTrack').value = state.track;
+
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    audioCtx.decodeAudioData(ev.target.result, dec => {
+                        decodedBuffer = dec; state.duration = dec.duration;
+                        parseLyrics(document.getElementById('lyricsInput').value);
+                        drawWaveform(dec);
+                    });
+                };
+                reader.readAsArrayBuffer(f);
+            }
+        });
+        document.getElementById('btnGenSynth').addEventListener('click', generateSynth);
+
+        document.getElementById('waveformScrubber').addEventListener('click', e => {
+            if (!state.duration || e.target.classList.contains('lyric-block')) return;
+            const rect = document.querySelector('.waveform-hull').getBoundingClientRect();
+            if (e.clientX >= rect.left && e.clientX <= rect.right) {
+                audioElement.currentTime = ((e.clientX - rect.left) / rect.width) * state.duration;
+            }
+        });
+
+        document.getElementById('btnSelectBg').addEventListener('click', () => document.getElementById('bgInput').click());
+        document.getElementById('bgInput').addEventListener('change', e => {
+            const f = e.target.files[0];
+            if (f) {
+                const r = new FileReader();
+                r.onload = ev => { bgImage = new Image(); bgImage.src = ev.target.result; };
+                r.readAsDataURL(f);
+            }
+        });
+
+        document.getElementById('inputChannel').addEventListener('input', e => state.channel = e.target.value);
+        document.getElementById('inputTrack').addEventListener('input', e => state.track = e.target.value);
+        document.getElementById('lyricsInput').addEventListener('input', e => parseLyrics(e.target.value));
+        document.getElementById('selectBgMode').addEventListener('change', e => state.bgMode = e.target.value);
+        document.getElementById('selectParticleMode').addEventListener('change', e => state.particleMode = e.target.value);
+
+        document.getElementById('paramKickColor').addEventListener('input', e => state.kickColor = e.target.value);
+        document.getElementById('paramVocalColor').addEventListener('input', e => state.vocalColor = e.target.value);
+        document.getElementById('paramMusicColor').addEventListener('input', e => state.musicColor = e.target.value);
+
+        document.getElementById('btnFormatSample').addEventListener('click', () => {
+            document.getElementById('lyricsInput').value = `Welcome to Azima Studio Pro\nFeel the rhythm in the bass drop\nVisualizer active, shining bright\nEnjoy the music all through the night`;
+            parseLyrics(document.getElementById('lyricsInput').value);
+        });
+        document.getElementById('btnStampLyric').addEventListener('click', () => {
+            let active = lyrics.find(l => state.currentTime >= l.start);
+            if (active) { active.start = state.currentTime; renderLyricBlocks(); }
+        });
+
+        document.querySelectorAll('.preset-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+                this.classList.add('active'); state.preset = this.dataset.preset;
+            });
+        });
+
+        function hook(id, key, valId, isFloat = false, suffix = '') {
+            document.getElementById(id).addEventListener('input', e => {
+                const v = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value);
+                state[key] = v;
+                if (valId) document.getElementById(valId).innerText = (isFloat ? v.toFixed(2) : v) + suffix;
+            });
+        }
+        hook('paramAmp', 'amp', 'valAmp');
+        hook('paramRadius', 'radius', 'valRadius');
+        hook('paramBlobSensitivity', 'blobSensitivity', 'valBlobSensitivity', true, 'x');
+        hook('paramPartSpeed', 'partSpeed', 'valPartSpeed', true, 'x');
+        hook('paramPartSize', 'partSize', 'valPartSize', true, 'x');
+        hook('paramBgDim', 'bgDim', 'valBgDim', true, '');
+        hook('paramBgBlur', 'bgBlur', 'valBgBlur', false, ' px');
+
+        // Video Export
+        const exportModal = document.getElementById('exportModal');
+        document.getElementById('btnOpenExportModal').addEventListener('click', () => exportModal.classList.add('active'));
+        document.getElementById('btnCancelRender').addEventListener('click', () => exportModal.classList.remove('active'));
+
+        document.getElementById('btnStartExport').addEventListener('click', async () => {
+            if (!decodedBuffer) { alert("Muat audio atau buat beat instan terlebih dahulu!"); return; }
+            state.isRendering = true; audioElement.pause();
+
+            const res = parseInt(document.getElementById('exportResolution').value);
+            const w = Math.round(res * (16/9)), h = res;
+            offscreenCanvas.width = w; offscreenCanvas.height = h;
+
+            const format = document.getElementById('exportFormat').value;
+            const fps = 30;
+            const totalDur = decodedBuffer.duration;
+            const totalFrames = Math.floor(totalDur * fps);
+
+            const statusText = document.getElementById('renderStatusText');
+            const fillBar = document.getElementById('renderProgressFill');
+
+            try {
+                const muxer = new WebMMuxer.Muxer({
+                    target: new WebMMuxer.ArrayBufferTarget(),
+                    video: { codec: 'V_VP9', width: w, height: h, frameRate: fps },
+                    audio: { codec: 'A_OPUS', sampleRate: decodedBuffer.sampleRate, numberOfChannels: decodedBuffer.numberOfChannels }
+                });
+
+                const vEnc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: console.error });
+                await vEnc.configure({ codec: 'vp09.00.10.08', width: w, height: h, bitrate: 4500000, framerate: fps });
+
+                const aEnc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: console.error });
+                await aEnc.configure({ codec: 'opus', sampleRate: decodedBuffer.sampleRate, numberOfChannels: decodedBuffer.numberOfChannels, bitrate: 192000 });
+
+                const rawCh = decodedBuffer.getChannelData(0);
+                const audioData = new AudioData({
+                    format: 'f32-planar', sampleRate: decodedBuffer.sampleRate, numberOfFrames: decodedBuffer.length, numberOfChannels: 1,
+                    timestamp: 0, data: rawCh
+                });
+                aEnc.encode(audioData); audioData.close();
+                await aEnc.flush();
+
+                for (let f = 0; f < totalFrames; f++) {
+                    const t = f / fps;
+                    const { kFreq, vFreq, mFreq } = extractMultiFFTOffline(decodedBuffer, t);
+
+                    renderFrame(offCtx, w, h, kFreq, vFreq, mFreq, t);
+
+                    const frame = new VideoFrame(offscreenCanvas, { timestamp: Math.round(f * (1e6 / fps)), duration: Math.round(1e6 / fps) });
+                    vEnc.encode(frame, { keyFrame: f % (fps * 2) === 0 });
+                    frame.close();
+
+                    if (f % 10 === 0) {
+                        const pct = ((f / totalFrames) * 100).toFixed(1);
+                        statusText.innerText = `Merender Frame: ${f} / ${totalFrames} (${pct}%)`;
+                        fillBar.style.width = `${pct}%`;
+                        await new Promise(r => setTimeout(r, 1));
+                    }
+                }
+
+                statusText.innerText = 'Memfinalisasi kontainer video...';
+                await vEnc.flush();
+                muxer.finalize();
+
+                const blob = new Blob([muxer.target.buffer], { type: format === 'mp4' ? 'video/mp4' : 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `azima-visualizer-${res}p-${Date.now()}.${format}`;
+                a.click();
+
+                statusText.innerText = '✅ Selesai! Video berhasil diunduh.';
+                exportModal.classList.remove('active');
+            } catch (err) {
+                console.error(err);
+                statusText.innerText = `Error: ${err.message}`;
+            } finally {
+                state.isRendering = false;
+            }
+        });
+
+        function extractMultiFFTOffline(buffer, targetTime) {
+            const half = 128;
+            const kOut = new Float32Array(half);
+            const vOut = new Float32Array(half);
+            const mOut = new Float32Array(half);
+            const ch0 = buffer.getChannelData(0);
+            const center = Math.floor(targetTime * buffer.sampleRate);
+            
+            for (let i = 0; i < half; i++) {
+                let idx = center + (i - half / 2);
+                let val = (idx >= 0 && idx < ch0.length) ? Math.abs(ch0[idx]) * 255 * 3.5 : 0;
+                kOut[i] = i < 15 ? val * 1.5 : val * 0.2;
+                vOut[i] = (i >= 10 && i < 60) ? val * 1.2 : val * 0.3;
+                mOut[i] = val;
+            }
+            return { kFreq: kOut, vFreq: vOut, mFreq: mOut };
+        }
+
+        window.addEventListener('load', () => {
+            document.getElementById('btnFormatSample').click();
+            loop();
+        });
+    </script>
+</body>
+</html>
