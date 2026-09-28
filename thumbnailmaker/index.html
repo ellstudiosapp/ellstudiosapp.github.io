@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ Playlist Studio - 1920x1080</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,900;1,900&display=swap');
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Panel Kiri */
+        .sidebar {
+            width: 400px;
+            background-color: #1e293b;
+            border-right: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            z-index: 10;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+        }
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111827;
+        }
+        .sidebar-header h1 {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: #60a5fa;
+            letter-spacing: 0.5px;
+        }
+        .badge {
+            font-size: 0.7rem;
+            background: #1e3a8a;
+            color: #93c5fd;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .sidebar-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .sidebar-content::-webkit-scrollbar { width: 6px; }
+        .sidebar-content::-webkit-scrollbar-track { background: #1e293b; }
+        .sidebar-content::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+        .control-group {
+            background: #334155;
+            border: 1px solid #475569;
+            padding: 14px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .control-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+        .col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #fff;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 100%;
+            height: 35px;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #0f172a;
+            padding: 2px;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 1px solid #475569; border-radius: 4px; }
+
+        .drop-zone {
+            border: 2px dashed #64748b;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(15, 23, 42, 0.4);
+            transition: 0.2s;
+        }
+        .drop-zone:hover { border-color: #60a5fa; background: rgba(15, 23, 42, 0.7); }
+        .drop-zone p { font-size: 0.75rem; color: #94a3b8; }
+
+        .btn {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn:hover { background: #1d4ed8; }
+        .btn-success { background: #16a34a; }
+        .btn-success:hover { background: #15803d; }
+        .btn-dark { background: #475569; font-size: 0.75rem; padding: 6px; }
+        .btn-dark:hover { background: #334155; }
+
+        /* Area Preview Kanan */
+        .preview-container {
+            flex: 1;
+            background-color: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            overflow: auto;
+        }
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1150px;
+            aspect-ratio: 16/9;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #1e293b;
+            background: #000;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            display: block;
+        }
+        canvas:active { cursor: grabbing; }
+
+        .file-input-hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- PANEL KONTROL KIRI -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>DJ PLAYLIST STUDIO</h1>
+            <span class="badge">1920x1080</span>
+        </div>
+
+        <div class="sidebar-content">
+            <!-- 1. BACKGROUND -->
+            <div class="control-group">
+                <label>1. Gambar Background</label>
+                <div id="drop-zone" class="drop-zone">
+                    <p>Drag & Drop gambar disini atau klik untuk pilih file</p>
+                    <input type="file" id="bg-file" class="file-input-hidden" accept="image/*">
+                </div>
+                <button id="btn-auto-color" class="btn">Gunakan Warna Dominan (Color Match)</button>
+                <div class="col" style="margin-top: 4px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8;">
+                        <span>Zoom Background</span>
+                        <span id="zoom-val">100%</span>
+                    </div>
+                    <input type="range" id="bg-zoom" min="50" max="300" value="100" style="accent-color: #60a5fa; cursor: pointer;">
+                </div>
+            </div>
+
+            <!-- 2. TEKS UTAMA & SUB JUDUL -->
+            <div class="control-group">
+                <label>2. Judul & Sub Judul</label>
+                <div class="col">
+                    <span style="font-size: 0.7rem; color: #94a3b8;">Judul Utama</span>
+                    <input type="text" id="input-title" value="DJ REMIX FULL BASS">
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <span style="font-size: 0.7rem; color: #94a3b8;">Ukuran</span>
+                        <input type="number" id="title-size" value="64" min="20" max="120">
+                    </div>
+                    <div class="col">
+                        <span style="font-size: 0.7rem; color: #94a3b8;">Warna</span>
+                        <input type="color" id="title-color" value="#ffffff">
+                    </div>
+                </div>
+
+                <div class="col" style="margin-top: 6px;">
+                    <span style="font-size: 0.7rem; color: #94a3b8;">Sub Judul</span>
+                    <input type="text" id="input-subtitle" value="TOP DJ REMIX EDM & ALAN WALKER">
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <span style="font-size: 0.7rem; color: #94a3b8;">Ukuran</span>
+                        <input type="number" id="subtitle-size" value="22" min="10" max="60">
+                    </div>
+                    <div class="col">
+                        <span style="font-size: 0.7rem; color: #94a3b8;">Warna</span>
+                        <input type="color" id="subtitle-color" value="#ffffff">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. DAFTAR PLAYLIST -->
+            <div class="control-group">
+                <label>3. Daftar Playlist & Kotak</label>
+                <div class="row">
+                    <div class="col">
+                        <span style="font-size: 0.7rem; color: #94a3b8;">Ukuran Font List</span>
+                        <input type="number" id="list-size" value="32" min="12" max="60">
+                    </div>
+                    <div class="col">
+                        <span style="font-size: 0.7rem; color: #94a3b8;">Warna Teks List</span>
+                        <input type="color" id="list-color" value="#ffffff">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <span style="font-size: 0.7rem; color: #94a3b8;">Warna Kotak (Pill)</span>
+                        <input type="color" id="pill-color" value="#111827">
+                    </div>
+                    <div class="col">
+                        <span style="font-size: 0.7rem; color: #94a3b8;">Transparansi Kotak</span>
+                        <input type="range" id="pill-opacity" min="0" max="1" step="0.05" value="0.75" style="accent-color: #60a5fa; margin-top: 6px; cursor: pointer;">
+                    </div>
+                </div>
+                <div class="col">
+                    <span style="font-size: 0.7rem; color: #94a3b8;">Daftar Lagu (1 per baris)</span>
+                    <textarea id="input-tracks" rows="8" style="font-family: monospace; font-size: 0.75rem; line-height: 1.4;">YOU MADE ME BELIEVE
+SHE BECAME YOURS
+NOT MY PROBLEM
+MAKE YOU BELIEVE
+DON'T STOP BELIEVING
+FORGOTTEN PROMISES
+LOST AND LONELY
+DON'T SAY GOODBYE
+STILL BROKEN FOR YOU
+DON'T BREAK MY HEART</textarea>
+                </div>
+            </div>
+
+            <!-- 4. EKSPOR & CONFIG -->
+            <div class="control-group" style="background: transparent; border: none; padding: 0;">
+                <button id="btn-export" class="btn btn-success" style="width: 100%; padding: 12px; font-size: 0.9rem;">
+                    Download JPG (1920x1080)
+                </button>
+                <div class="row" style="margin-top: 8px;">
+                    <button id="btn-export-json" class="btn btn-dark" style="flex: 1;">Export Config</button>
+                    <label class="btn btn-dark" style="flex: 1; text-align: center; cursor: pointer; margin: 0; display: flex; align-items: center; justify-content: center;">
+                        Import Config
+                        <input type="file" id="import-json" class="file-input-hidden" accept=".json">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AREA PREVIEW KANAN -->
+    <div class="preview-container">
+        <div class="canvas-wrapper">
+            <canvas id="canvas" width="1920" height="1080"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let bgImg = new Image();
+        let bgLoaded = false;
+        let bgScale = 1.0;
+        let bgOffsetX = 0;
+        let bgOffsetY = 0;
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let dominantColorHex = '#3b82f6';
+
+        bgImg.crossOrigin = "anonymous";
+        bgImg.onload = () => {
+            bgLoaded = true;
+            if (bgScale === 1.0 && bgOffsetX === 0 && bgOffsetY === 0) {
+                fitImageToCanvas();
+            }
+            extractDominantColor();
+            draw();
+        };
+        bgImg.src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1920&auto=format&fit=crop";
+
+        function fitImageToCanvas() {
+            if (!bgImg.width) return;
+            const hRatio = canvas.width / bgImg.width;
+            const vRatio = canvas.height / bgImg.height;
+            bgScale = Math.max(hRatio, vRatio);
+            document.getElementById('bg-zoom').value = Math.round(bgScale * 100);
+            document.getElementById('zoom-val').innerText = Math.round(bgScale * 100) + '%';
+            bgOffsetX = (canvas.width - bgImg.width * bgScale) / 2;
+            bgOffsetY = (canvas.height - bgImg.height * bgScale) / 2;
+        }
+
+        function extractDominantColor() {
+            try {
+                const tempCanvas = document.createElement('canvas');
+                const tCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = 50;
+                tempCanvas.height = 50;
+                tCtx.drawImage(bgImg, 0, 0, 50, 50);
+                const imgData = tCtx.getImageData(0, 0, 50, 50).data;
+                let r = 0, g = 0, b = 0, count = 0;
+                for (let i = 0; i < imgData.length; i += 16) {
+                    r += imgData[i];
+                    g += imgData[i+1];
+                    b += imgData[i+2];
+                    count++;
+                }
+                r = Math.floor(r / count);
+                g = Math.floor(g / count);
+                b = Math.floor(b / count);
+                dominantColorHex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+            } catch(e) {
+                dominantColorHex = '#3b82f6';
+            }
+        }
+
+        function hexToRgba(hex, alpha) {
+            let c = hex.replace('#','');
+            if(c.length===3) c = c.split('').map(x=>x+x).join('');
+            const num = parseInt(c, 16);
+            return `rgba(${(num >> 16)&255}, ${(num >> 8)&255}, ${num & 255}, ${alpha})`;
+        }
+
+        function drawRoundedRect(x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (bgLoaded) {
+                ctx.save();
+                ctx.drawImage(bgImg, bgOffsetX, bgOffsetY, bgImg.width * bgScale, bgImg.height * bgScale);
+                ctx.restore();
+            }
+
+            const titleText = document.getElementById('input-title').value;
+            const titleSize = parseInt(document.getElementById('title-size').value) || 64;
+            const titleColor = document.getElementById('title-color').value;
+
+            const subtitleText = document.getElementById('input-subtitle').value;
+            const subtitleSize = parseInt(document.getElementById('subtitle-size').value) || 22;
+            const subtitleColor = document.getElementById('subtitle-color').value;
+
+            const listSize = parseInt(document.getElementById('list-size').value) || 32;
+            const listColor = document.getElementById('list-color').value;
+            const pillColor = document.getElementById('pill-color').value;
+            const pillOpacity = parseFloat(document.getElementById('pill-opacity').value) || 0.75;
+
+            const rawTracks = document.getElementById('input-tracks').value.split('\n').filter(t => t.trim() !== '');
+
+            // Render Judul & Sub Judul
+            ctx.save();
+            ctx.font = `900 ${titleSize}px 'Montserrat', sans-serif`;
+            ctx.fillStyle = titleColor;
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.fillText(titleText, 80, 130);
+
+            ctx.font = `700 ${subtitleSize}px 'Montserrat', sans-serif`;
+            ctx.fillStyle = subtitleColor;
+            ctx.fillText(subtitleText, 80, 185);
+            ctx.restore();
+
+            // Render Daftar Playlist & Kotak Dinamis Sesuai Panjang Teks
+            const startYPos = 250;
+            const rowHeight = 75;
+            const leftX = 80;
+
+            ctx.save();
+            ctx.font = `900 ${listSize}px 'Montserrat', sans-serif`;
+
+            rawTracks.forEach((track, index) => {
+                const currentY = startYPos + (index * rowHeight);
+                const numStr = String(index + 1).padStart(2, '0') + '.';
+                const fullText = `${numStr}  ${track}`;
+
+                const textMetrics = ctx.measureText(fullText);
+                const boxWidth = textMetrics.width + 50; 
+                const boxHeight = listSize * 1.35;
+                const boxY = currentY - listSize;
+
+                // Kotak latar belakang playlist
+                ctx.fillStyle = hexToRgba(pillColor, pillOpacity);
+                drawRoundedRect(leftX, boxY, boxWidth, boxHeight, 10);
+
+                // Nomor Playlist (Warna Sesuai Color Match Dominan)
+                ctx.fillStyle = dominantColorHex;
+                ctx.shadowColor = 'rgba(0,0,0,0.6)';
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                ctx.fillText(numStr, leftX + 15, currentY);
+
+                // Judul Lagu
+                ctx.fillStyle = listColor;
+                const numWidth = ctx.measureText(numStr + '  ').width;
+                ctx.fillText(track, leftX + 15 + numWidth, currentY);
+            });
+            ctx.restore();
+
+            saveToCache();
+        }
+
+        // Interaksi Drag & Pan Background
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - bgOffsetX;
+            startY = e.clientY - bgOffsetY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            bgOffsetX = e.clientX - startX;
+            bgOffsetY = e.clientY - startY;
+            draw();
+        });
+
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        // Zoom dengan Scroll Mouse
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomStep = 0.05;
+            let newScale = bgScale + (e.deltaY < 0 ? zoomStep : -zoomStep);
+            newScale = Math.max(0.2, Math.min(5.0, newScale));
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            bgOffsetX = mouseX - (mouseX - bgOffsetX) * (newScale / bgScale);
+            bgOffsetY = mouseY - (mouseY - bgOffsetY) * (newScale / bgScale);
+            bgScale = newScale;
+
+            document.getElementById('bg-zoom').value = Math.round(bgScale * 100);
+            document.getElementById('zoom-val').innerText = Math.round(bgScale * 100) + '%';
+            draw();
+        }, { passive: false });
+
+        // Slider Zoom
+        document.getElementById('bg-zoom').addEventListener('input', (e) => {
+            const targetScale = parseInt(e.target.value) / 100;
+            document.getElementById('zoom-val').innerText = e.target.value + '%';
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            bgOffsetX = centerX - (centerX - bgOffsetX) * (targetScale / bgScale);
+            bgOffsetY = centerY - (centerY - bgOffsetY) * (targetScale / bgScale);
+            bgScale = targetScale;
+            draw();
+        });
+
+        // Drag & Drop File Background
+        const dropZone = document.getElementById('drop-zone');
+        const bgFileInput = document.getElementById('bg-file');
+
+        dropZone.addEventListener('click', () => bgFileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#60a5fa'; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#64748b'; });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#64748b';
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                loadImgFile(e.dataTransfer.files[0]);
+            }
+        });
+        bgFileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                loadImgFile(e.target.files[0]);
+            }
+        });
+
+        function loadImgFile(file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                bgImg.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('btn-auto-color').addEventListener('click', () => {
+            extractDominantColor();
+            document.getElementById('pill-color').value = dominantColorHex;
+            draw();
+        });
+
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            if (input.id !== 'bg-file' && input.id !== 'import-json' && input.id !== 'bg-zoom') {
+                input.addEventListener('input', draw);
+            }
+        });
+
+        function saveToCache() {
+            const config = {
+                title: document.getElementById('input-title').value,
+                titleSize: document.getElementById('title-size').value,
+                titleColor: document.getElementById('title-color').value,
+                subtitle: document.getElementById('input-subtitle').value,
+                subtitleSize: document.getElementById('subtitle-size').value,
+                subtitleColor: document.getElementById('subtitle-color').value,
+                listSize: document.getElementById('list-size').value,
+                listColor: document.getElementById('list-color').value,
+                pillColor: document.getElementById('pill-color').value,
+                pillOpacity: document.getElementById('pill-opacity').value,
+                tracks: document.getElementById('input-tracks').value,
+                bgScale: bgScale,
+                bgOffsetX: bgOffsetX,
+                bgOffsetY: bgOffsetY,
+                bgSrc: bgImg.src,
+                dominantColorHex: dominantColorHex
+            };
+            localStorage.setItem('dj_playlist_config', JSON.stringify(config));
+        }
+
+        function loadFromCache() {
+            const saved = localStorage.getItem('dj_playlist_config');
+            if (!saved) return;
+            try {
+                const config = JSON.parse(saved);
+                document.getElementById('input-title').value = config.title ?? document.getElementById('input-title').value;
+                document.getElementById('title-size').value = config.titleSize ?? 64;
+                document.getElementById('title-color').value = config.titleColor ?? '#ffffff';
+                document.getElementById('input-subtitle').value = config.subtitle ?? document.getElementById('input-subtitle').value;
+                document.getElementById('subtitle-size').value = config.subtitleSize ?? 22;
+                document.getElementById('subtitle-color').value = config.subtitleColor ?? '#ffffff';
+                document.getElementById('list-size').value = config.listSize ?? 32;
+                document.getElementById('list-color').value = config.listColor ?? '#ffffff';
+                document.getElementById('pill-color').value = config.pillColor ?? '#111827';
+                document.getElementById('pill-opacity').value = config.pillOpacity ?? 0.75;
+                document.getElementById('input-tracks').value = config.tracks ?? document.getElementById('input-tracks').value;
+                bgScale = config.bgScale ?? 1.0;
+                bgOffsetX = config.bgOffsetX ?? 0;
+                bgOffsetY = config.bgOffsetY ?? 0;
+                dominantColorHex = config.dominantColorHex ?? '#3b82f6';
+                if (config.bgSrc) {
+                    bgImg.src = config.bgSrc;
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        document.getElementById('btn-export-json').addEventListener('click', () => {
+            const saved = localStorage.getItem('dj_playlist_config');
+            const blob = new Blob([saved], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'dj_playlist_config.json';
+            a.click();
+        });
+
+        document.getElementById('import-json').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                localStorage.setItem('dj_playlist_config', evt.target.result);
+                loadFromCache();
+                draw();
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('btn-export').addEventListener('click', () => {
+            draw();
+            const link = document.createElement('a');
+            link.download = 'dj_playlist_1920x1080.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromCache();
+        });
+    </script>
+</body>
+</html>
