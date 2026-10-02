@@ -1110,8 +1110,8 @@
             bgScale: 1.05,
             bgDim: 0.45,
             bgBlur: 0,
-            logoDataUrl: null, // Menyimpan Base64 Logo
-            bgDataUrl: null,   // Menyimpan Base64 Background
+            logoDataUrl: null,
+            bgDataUrl: null,
             layers: {
                 shake: true,
                 bgZoom: true,
@@ -1141,7 +1141,7 @@
                 };
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(settingsData));
             } catch (e) {
-                console.error("Gagal menyimpan ke localStorage (kemungkinan ukuran gambar terlalu besar):", e);
+                console.error("Gagal menyimpan ke localStorage:", e);
             }
         }
 
@@ -1158,7 +1158,6 @@
                 }
                 applyStateToUI();
 
-                // Muat kembali gambar dari Base64 jika ada
                 if (state.logoDataUrl) {
                     logoImage = new Image();
                     logoImage.src = state.logoDataUrl;
@@ -2620,7 +2619,7 @@ Enjoy the music all through the night`;
 
             btnDownloadBackup.style.display = 'none';
             btnStartExport.disabled = true;
-            statusText.innerText = 'Menginisialisasi WebM Muxer & Pendinginan CPU...';
+            statusText.innerText = 'Menginisialisasi WebM Muxer & Enkoder...';
 
             const totalDuration = decodedAudioBuffer.duration;
             const totalFrames = Math.floor(totalDuration * fps);
@@ -2648,26 +2647,35 @@ Enjoy the music all through the night`;
                     error: (e) => console.error("VideoEncoder error:", e)
                 });
 
-                await videoEncoder.configure({
-                    codec: 'vp09.00.10.08',
-                    width: exportW,
-                    height: exportH,
-                    bitrate: 4_500_000,
-                    hardwareAcceleration: 'prefer-hardware',
-                    framerate: fps
-                });
-
                 const audioEncoder = new AudioEncoder({
                     output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
                     error: (e) => console.error("AudioEncoder error:", e)
                 });
 
-                await audioEncoder.configure({
+                const videoConfig = {
+                    codec: 'vp09.00.10.08',
+                    width: exportW,
+                    height: exportH,
+                    bitrate: 4_500_000,
+                    framerate: fps,
+                    hardwareAcceleration: 'no-preference'
+                };
+
+                const audioConfig = {
                     codec: 'opus',
                     sampleRate: decodedAudioBuffer.sampleRate,
                     numberOfChannels: decodedAudioBuffer.numberOfChannels,
                     bitrate: 192_000
-                });
+                };
+
+                const vSupport = await VideoEncoder.isConfigSupported(videoConfig);
+                if (!vSupport.supported) {
+                    throw new Error("Konfigurasi Video VP9 tidak didukung oleh browser ini.");
+                }
+
+                // Memastikan konfigurasi enkoder selesai sepenuhnya sebelum proses frame dimulai
+                await videoEncoder.configure(videoConfig);
+                await audioEncoder.configure(audioConfig);
 
                 statusText.innerText = 'Mengompresi Audio Master (Opus)...';
                 const audioSampleRate = decodedAudioBuffer.sampleRate;
