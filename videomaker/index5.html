@@ -689,8 +689,8 @@
         </div>
 
         <div class="header-actions">
-            <button class="btn" id="btnExportSettings" title="Export Setting ke File JSON">💾 Export Setting</button>
-            <button class="btn" id="btnImportSettings" title="Import Setting dari File JSON">📂 Import Setting</button>
+            <button class="btn" id="btnExportSettings" title="Export Semua Setting ke File JSON">💾 Export Setting</button>
+            <button class="btn" id="btnImportSettings" title="Import Semua Setting dari File JSON">📂 Import Setting</button>
             <input type="file" id="importSettingsInput" class="hidden-input" accept=".json">
             <button class="btn btn-primary" id="btnOpenExportModal">🎥 Export Video (Background)</button>
         </div>
@@ -742,7 +742,7 @@
                     <label class="switch"><input type="checkbox" id="layerLyrics" checked><span class="switch-slider"></span></label>
                 </div>
                 <div class="layer-item">
-                    <span class="layer-left">🖼️️ Background Image</span>
+                    <span class="layer-left">🖼️ Background Image</span>
                     <label class="switch"><input type="checkbox" id="layerBg" checked><span class="switch-slider"></span></label>
                 </div>
 
@@ -1110,6 +1110,8 @@
             bgScale: 1.05,
             bgDim: 0.45,
             bgBlur: 0,
+            logoDataUrl: null, // Menyimpan Base64 Logo
+            bgDataUrl: null,   // Menyimpan Base64 Background
             layers: {
                 shake: true,
                 bgZoom: true,
@@ -1129,7 +1131,7 @@
             cancelRenderRequested: false
         };
 
-        const STORAGE_KEY = 'azima_visualizer_settings_v1';
+        const STORAGE_KEY = 'azima_visualizer_settings_v2';
 
         function saveSettingsToLocalStorage() {
             try {
@@ -1139,7 +1141,7 @@
                 };
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(settingsData));
             } catch (e) {
-                console.error("Gagal menyimpan ke localStorage:", e);
+                console.error("Gagal menyimpan ke localStorage (kemungkinan ukuran gambar terlalu besar):", e);
             }
         }
 
@@ -1155,6 +1157,16 @@
                     document.getElementById('lyricsInput').value = data.lyricsText;
                 }
                 applyStateToUI();
+
+                // Muat kembali gambar dari Base64 jika ada
+                if (state.logoDataUrl) {
+                    logoImage = new Image();
+                    logoImage.src = state.logoDataUrl;
+                }
+                if (state.bgDataUrl) {
+                    bgImage = new Image();
+                    bgImage.src = state.bgDataUrl;
+                }
             } catch (e) {
                 console.error("Gagal memuat dari localStorage:", e);
             }
@@ -1165,20 +1177,17 @@
             document.getElementById('inputTrackTitle').value = state.trackTitle || "";
             document.getElementById('selectBgMode').value = state.bgMode || "cover";
 
-            // Set preset chip active
             document.querySelectorAll('.preset-chip').forEach(c => {
                 if (c.dataset.preset === state.preset) c.classList.add('active');
                 else c.classList.remove('active');
             });
 
-            // Set layers toggles
             for (const [key, val] of Object.entries(state.layers)) {
                 const capKey = key.charAt(0).toUpperCase() + key.slice(1);
                 const el = document.getElementById(`layer${capKey}`);
                 if (el) el.checked = val;
             }
 
-            // Sync Sliders & Inputs
             const pairs = [
                 ['paramLyricSize', 'valLyricSize', state.lyricSize, ' px'],
                 ['paramBgPanX', 'valBgPanX', state.bgPanX, '%'],
@@ -1242,7 +1251,6 @@
         let logoImage = null;
         let bgImage = null;
 
-        // Parser Lirik Berbasis Enter dengan Logika Stick-Together
         function parseLyricsFromText(text) {
             const rawLines = text.split('\n');
             const result = [];
@@ -1295,7 +1303,6 @@
             return result;
         }
 
-        // Render Blok Lirik Stick-Together di Timeline Bawah
         function renderTimelineLyricBlocks(lyrics) {
             const track = document.getElementById('lyricMarkersTrack');
             track.innerHTML = '';
@@ -2111,7 +2118,6 @@ Enjoy the music all through the night`;
             ctx.restore();
         }
 
-        // Render Lirik Dinamis Stick-Together di Tengah Bawah Kanvas
         function renderDynamicLyrics(ctx, width, height, currentTime, accentColor) {
             if (!state.layers.lyrics || parsedLyrics.length === 0) return;
 
@@ -2590,7 +2596,7 @@ Enjoy the music all through the night`;
             const fps = 30;
 
             const thermalProfile = document.getElementById('exportThermalProfile').value;
-            let pacingSleepMs = 24; // Default Eco
+            let pacingSleepMs = 24;
             let maxBackpressureQueue = 2;
             if (thermalProfile === 'balanced') {
                 pacingSleepMs = 10;
@@ -2647,7 +2653,7 @@ Enjoy the music all through the night`;
                     width: exportW,
                     height: exportH,
                     bitrate: 4_500_000,
-                    hardwareAcceleration: 'prefer-hardware', // Memaksa akselerasi GPU
+                    hardwareAcceleration: 'prefer-hardware',
                     framerate: fps
                 });
 
@@ -2828,8 +2834,23 @@ Enjoy the music all through the night`;
                         document.getElementById('lyricsInput').value = parsed.lyricsText;
                     }
                     applyStateToUI();
+
+                    if (state.logoDataUrl) {
+                        logoImage = new Image();
+                        logoImage.src = state.logoDataUrl;
+                    } else {
+                        logoImage = null;
+                    }
+
+                    if (state.bgDataUrl) {
+                        bgImage = new Image();
+                        bgImage.src = state.bgDataUrl;
+                    } else {
+                        bgImage = null;
+                    }
+
                     saveSettingsToLocalStorage();
-                    alert("✅ Pengaturan berhasil diimpor!");
+                    alert("✅ Semua pengaturan & gambar berhasil diimpor!");
                 } catch (err) {
                     alert("❌ Format file JSON tidak valid!");
                     console.error(err);
@@ -2893,8 +2914,11 @@ Enjoy the music all through the night`;
             if (f) {
                 const r = new FileReader();
                 r.onload = (ev) => {
+                    const base64Str = ev.target.result;
+                    state.logoDataUrl = base64Str;
                     logoImage = new Image();
-                    logoImage.src = ev.target.result;
+                    logoImage.src = base64Str;
+                    saveSettingsToLocalStorage();
                 };
                 r.readAsDataURL(f);
             }
@@ -2906,8 +2930,11 @@ Enjoy the music all through the night`;
             if (f) {
                 const r = new FileReader();
                 r.onload = (ev) => {
+                    const base64Str = ev.target.result;
+                    state.bgDataUrl = base64Str;
                     bgImage = new Image();
-                    bgImage.src = ev.target.result;
+                    bgImage.src = base64Str;
+                    saveSettingsToLocalStorage();
                 };
                 r.readAsDataURL(f);
             }
@@ -2916,6 +2943,9 @@ Enjoy the music all through the night`;
         document.getElementById('btnResetImages').addEventListener('click', () => {
             logoImage = null;
             bgImage = null;
+            state.logoDataUrl = null;
+            state.bgDataUrl = null;
+            saveSettingsToLocalStorage();
         });
 
         ['Shake', 'BgZoom', 'Shockwaves', 'Glow', 'Spectrum', 'Particles', 'Logo', 'OverlayText', 'Lyrics', 'Bg'].forEach(l => {
